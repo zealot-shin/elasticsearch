@@ -1,92 +1,88 @@
 [[modules]]
-= Modules
+= 模块
 
 [partintro]
 --
-This section contains modules responsible for various aspects of the functionality in Elasticsearch.  Each module has settings which may be:
+本章涵盖了负责 Elasticsearch 方方面面功能的模块。每个模块的设定可以是：
 
-_static_::
+_静态_::
 
-These settings must be set at the node level, either in the
-`elasticsearch.yml` file, or as an environment variable or on the command line
-when starting a node.  They must be set on every relevant node in the cluster.
+这些设定必须在节点级别进行设置，或在“elasticsearch.yml”文件中，或作为环境变量或
+包含在启动节点时的命令行中。他们必须在集群中每一个相关节点中都进行设置。
 
-_dynamic_::
+_动态_::
 
-These settings can be dynamically updated on a live cluster with the
-<<cluster-update-settings,cluster-update-settings>> API.
+这些设定可以在一个运行的集群中使用
+<<cluster-update-settings,集群更新设定>>API进行动态更新。
 
-The modules in this section are:
+本章的模型包括：
 
-<<modules-cluster,Cluster-level routing and shard allocation>>::
+<<modules-cluster,集群级别路由和分片分配>>::
 
-    Settings to control where, when, and how shards are allocated to nodes.
+    控制分片何时，怎样，到哪儿的节点间的分配的设定。
 
-<<modules-discovery,Discovery>>::
+<<modules-discovery,发现>>::
 
-    How nodes discover each other to form a cluster.
+    节点如何发现彼此从而形成集群。
 
-<<modules-gateway,Gateway>>::
+<<modules-gateway,网关>>::
 
-    How many nodes need to join the cluster before recovery can start.
+    需要多少个节点加入集群方能使恢复启动。
 
 <<modules-http,HTTP>>::
 
-    Settings to control the HTTP REST interface.
+    控制 HTTP REST 接口的设置。
 
-<<modules-indices,Indices>>::
+<<modules-indices,索引>>::
 
-    Global index-related settings.
+    全局的索引相关的设置。
 
-<<modules-network,Network>>::
+<<modules-network,网络>>::
 
-    Controls default network settings.
+    控制默认的网络设置。
 
-<<modules-node,Node client>>::
+<<modules-node,节点客户端>>::
 
-    A Java node client joins the cluster, but doesn't hold data or act as a master node.
+    一个加入集群但既不保存数据也不作为主节点的 Java 客户端。
 
 <<modules-scripting-painless,Painless>>::
 
-    A built-in scripting language for Elasticsearch that's designed to be as secure as possible.
+    一个为 Elasticsearch 设计的尽可能安全的内建脚本语言。
 
-<<modules-plugins,Plugins>>::
+<<modules-plugins,插件>>::
 
-    Using plugins to extend Elasticsearch.
+    使用插件扩展 Elasticsearch。
 
-<<modules-scripting,Scripting>>::
+<<modules-scripting,脚本>>::
 
-    Custom scripting available in Lucene Expressions, ad Groovy. You can also
-    write scripts in the built-in scripting language,
-    <<modules-scripting-painless, Painless>>.
+    可在 Lucene 表达式以及 Groovy 中使用的自定义脚本。你也能使用内建的脚本语言来书写脚本，
+    <<modules-scripting-painless, Painless>>。
 
-<<modules-snapshots,Snapshot/Restore>>::
+<<modules-snapshots,快照/复原>>::
 
-    Backup your data with snapshot/restore.
+    使用 快照/复原 备份你的数据。
 
-<<modules-threadpool,Thread pools>>::
+<<modules-threadpool,线程池>>::
 
-    Information about the dedicated thread pools used in Elasticsearch.
+    关于 Elasticsearch 中专用的线程池
 
-<<modules-transport,Transport>>::
+<<modules-transport,传输>>::
 
-    Configure the transport networking layer, used internally by Elasticsearch
-    to communicate between nodes.
+    配置 Elasticsearch 内部用于节点间通信的网络传输层。
 
-<<modules-tribe,Tribe nodes>>::
+<<modules-tribe,族节点>>::
 
-    A tribe node joins one or more clusters and acts as a federated
-    client across them.
+    加入一个或多个集群，作为跨集群的联合客户端的族节点。
 
-<<modules-remote-clusters, Remote clusters>>::
+<<modules-remote-clusters, 远程集群>>::
 
-    Remote clusters are used in features that work by connecting across clusters
-    on the transport layer.
+    远程集群运行在这样的特质上：通过传输层连通各集群
 
-<<modules-cross-cluster-search, Cross cluster Search>>::
 
-    Cross cluster search enables executing search requests across more than one cluster without joining them and acts
-    as a federated client across them.
+<<modules-cross-cluster-search, 跨集群搜索>>::
+
+    跨集群搜索使得在多个集群执行搜索请求而不需加入这些集群成为可能，并将作为集群间
+    的一个联合客户端。
 --
 
 
