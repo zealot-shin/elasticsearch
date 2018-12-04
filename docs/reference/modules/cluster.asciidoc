@@ -1,29 +1,21 @@
 [[modules-cluster]]
-== Cluster
+== 集群
 
-One of the main roles of the master is to decide which shards to allocate to
-which nodes, and when to move shards between nodes in order to rebalance the
-cluster.
+集群的主要角色之一是决定哪个分片被分配到哪个节点，以及何时在节点间移动分片以平衡集群。
 
-There are a number of settings available to control the shard allocation process:
+有数个设定可用来控制分片分配的过程：
 
-*   <<shards-allocation>> lists the settings to control the allocation and
-    rebalancing operations.
+*   <<shards-allocation, 集群级别分片分配>> 列出了控制分配和再平衡操作的设定。
 
-*   <<disk-allocator>> explains how Elasticsearch takes available disk space
-    into account, and the related settings.
+*   <<disk-allocator, 基于硬盘的分片分配>> 阐明了 Elasticsearch 如何将可用磁盘空间考虑在内，以及相关的设定。
 
-*   <<allocation-awareness>> and <<forced-awareness>> control how shards can
-    be distributed across different racks or availability zones.
+*   <<allocation-awareness, 分配意识>> 和 <<forced-awareness, 强制意识>> 控制分片如何在不同的 racks 和可用区域分布。
 
-*   <<allocation-filtering>> allows certain nodes or groups of nodes excluded
-    from allocation so that they can be decommissioned.
+*   <<allocation-filtering, 分片分配过滤>> 允许特定的节点或一组节点不被分配而使他们可以退役。
 
-Besides these, there are a few other <<misc-cluster,miscellaneous cluster-level settings>>.
+除此以外，还有一些其他<<misc-cluster,各方面集群级别的设定>>.
 
-All of the settings in this section are _dynamic_ settings which can be
-updated on a live cluster with the
-<<cluster-update-settings,cluster-update-settings>> API.
+本章节所有设定都是 _动态的_ ，可在运行中的集群中使用<<cluster-update-settings,集群-更新-设定>> API 进行动态更新。
 
 include::cluster/shards_allocation.asciidoc[]
 
