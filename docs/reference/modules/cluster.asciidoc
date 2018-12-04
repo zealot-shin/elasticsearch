@@ -5,13 +5,13 @@
 
 有数个设定可用来控制分片分配的过程：
 
-*   <<shards-allocation, 集群级别分片分配>> 列出了控制分配和再平衡操作的设定。
+*   <<shards-allocation, 集群级别分片分配>>列出了控制分配和再平衡操作的设定。
 
-*   <<disk-allocator, 基于硬盘的分片分配>> 阐明了 Elasticsearch 如何将可用磁盘空间考虑在内，以及相关的设定。
+*   <<disk-allocator, 基于硬盘的分片分配>>阐明了 Elasticsearch 如何将可用磁盘空间考虑在内，以及相关的设定。
 
-*   <<allocation-awareness, 分配意识>> 和 <<forced-awareness, 强制意识>> 控制分片如何在不同的 racks 和可用区域分布。
+*   <<allocation-awareness, 分配意识>>和<<forced-awareness, 强制意识>>控制分片如何在不同的 racks 和可用区域分布。
 
-*   <<allocation-filtering, 分片分配过滤>> 允许特定的节点或一组节点不被分配而使他们可以退役。
+*   <<allocation-filtering, 分片分配过滤>>允许特定的节点或一组节点不被分配而使他们可以退役。
 
 除此以外，还有一些其他<<misc-cluster,各方面集群级别的设定>>.
 
