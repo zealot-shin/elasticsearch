@@ -1,127 +1,99 @@
 [[shards-allocation]]
-=== Cluster Level Shard Allocation
+=== 集群级别分片分配
 
-Shard allocation is the process of allocating shards to nodes. This can
-happen during initial recovery, replica allocation, rebalancing, or
-when nodes are added or removed.
+分片分配是分配分片到节点的过程。这会在初始化恢复，副本分配，再均衡，或者加入、移除节点时发生。
 
 [float]
-=== Shard Allocation Settings
+=== 分片分配设定
 
-The following _dynamic_ settings may be used to control shard allocation and recovery:
+以下的 _动态_ 设定可被用来控制分片分配和恢复：
 
 `cluster.routing.allocation.enable`::
 +
 --
-Enable or disable allocation for specific kinds of shards:
+激活或禁用特定类型分片的分配：
 
-* `all` -             (default) Allows shard allocation for all kinds of shards.
-* `primaries` -       Allows shard allocation only for primary shards.
-* `new_primaries` -   Allows shard allocation only for primary shards for new indices.
-* `none` -            No shard allocations of any kind are allowed for any indices.
+* `all` -             （默认）允许所有类型分片的分片分配。
+* `primaries` -       仅允许主分片的分片分配。
+* `new_primaries` -   仅允许新索引的主分片的分片分配。
+* `none` -            禁止任何索引的任何类型的分片分配。
 
-This setting does not affect the recovery of local primary shards when
-restarting a node.  A restarted node that has a copy of an unassigned primary
-shard will recover that primary immediately, assuming that its allocation id matches
-one of the active allocation ids in the cluster state.
+该设定不会影响节点重启时的本地主分片的恢复。拥有未分配主分片的副本的节点重启后会立即恢复那些主分片，假设它的分配id与集群状态中的活跃分配id之一是匹配的情况下。
 
 --
 
 `cluster.routing.allocation.node_concurrent_incoming_recoveries`::
 
-     How many concurrent incoming shard recoveries are allowed to happen on a node. Incoming recoveries are the recoveries
-     where the target shard (most likely the replica unless a shard is relocating) is allocated on the node. Defaults to `2`.
+     一个节点上允许的导入的并发分片恢复的数量。导入恢复指的是目标分片（最有可能的是副本，除非分片正在重分配）在该节点上的恢复过程。默认值为 `2`。
 
 `cluster.routing.allocation.node_concurrent_outgoing_recoveries`::
 
-     How many concurrent outgoing shard recoveries are allowed to happen on a node. Outgoing recoveries are the recoveries
-     where the source shard (most likely the primary unless a shard is relocating) is allocated on the node. Defaults to `2`.
+     一个节点上允许的导出的并发分片恢复的数量。导出恢复指的是源分片（最有可能的是主分片，除非分片正在重分配）在该节点上的恢复过程。默认值是 `2`。
 
 `cluster.routing.allocation.node_concurrent_recoveries`::
 
-     A shortcut to set both `cluster.routing.allocation.node_concurrent_incoming_recoveries` and
+     该参数同时设置 `cluster.routing.allocation.node_concurrent_incoming_recoveries` 和
      `cluster.routing.allocation.node_concurrent_outgoing_recoveries`.
 
 
 `cluster.routing.allocation.node_initial_primaries_recoveries`::
 
-    While the recovery of replicas happens over the network, the recovery of
-    an unassigned primary after node restart uses data from the local disk.
-    These should be fast so more initial primary recoveries can happen in
-    parallel on the same node.  Defaults to `4`.
+    尽管副本的恢复是通过网络来做的，在节点重启后未分配的主分片的恢复是使用本地磁盘的数据。这个过程会更快所以在同一个节点上能同时平行地进行更多的初始化主分片的恢复过程。默认值是 `4`。
 
 
 `cluster.routing.allocation.same_shard.host`::
 
-      Allows to perform a check to prevent allocation of multiple instances of
-      the same shard on a single host, based on host name and host address.
-      Defaults to `false`, meaning that no check is performed by default. This
-      setting only applies if multiple nodes are started on the same machine.
+      基于主机名和主机地址，允许进行一个检查，防止同一个分片的多个实例分配到单一主机。默认值是 `false`，意味着默认不进行检查。该设定仅应用在多个节点在同一台机器上启动的情况。
 
 [float]
-=== Shard Rebalancing Settings
+=== 分片再均衡设定
 
-The following _dynamic_ settings may be used to control the rebalancing of
-shards across the cluster:
+以下的 _动态_ 设定可用来控制分片在集群间的再均衡：
 
 
 `cluster.routing.rebalance.enable`::
 +
 --
-Enable or disable rebalancing for specific kinds of shards:
+激活或者禁用特定类型分片的再均衡：
 
-* `all` -         (default) Allows shard balancing for all kinds of shards.
-* `primaries` -   Allows shard balancing only for primary shards.
-* `replicas` -    Allows shard balancing only for replica shards.
-* `none` -        No shard balancing of any kind are allowed for any indices.
+* `all` -         （默认）允许所有类型分片的均衡。
+* `primaries` -   仅允许主分片的均衡。
+* `replicas` -    仅允许副本分片的均衡。
+* `none` -        禁止任何索引的任何类型的分片的均衡。
 --
 
 
 `cluster.routing.allocation.allow_rebalance`::
 +
 --
-Specify when shard rebalancing is allowed:
+指定允许分片再均衡的时间：
 
 
-* `always` -                    Always allow rebalancing.
-* `indices_primaries_active` -  Only when all primaries in the cluster are allocated.
-* `indices_all_active` -        (default) Only when all shards (primaries and replicas) in the cluster are allocated.
+* `always` -                    总是允许再均衡。
+* `indices_primaries_active` -  仅当集群中的所有主分片分配完以后。
+* `indices_all_active` -        （默认）仅当集群中的全部分片（主和副）分配完以后。
 --
 
 `cluster.routing.allocation.cluster_concurrent_rebalance`::
 
-      Allow to control how many concurrent shard rebalances are
-      allowed cluster wide. Defaults to `2`. Note that this setting
-      only controls the number of concurrent shard relocations due
-      to imbalances in the cluster. This setting does not limit shard
-      relocations due to <<allocation-filtering,allocation filtering>>
-      or <<forced-awareness,forced awareness>>.
+      可用来控制整个集群内允许同时进行分片再均衡的数量。默认值是 `2`。注意该设定仅能控制由于集群不均衡导致的同时进行的分片重分配的数量。该设定不会限制由于<<allocation-filtering,分配过滤>>或者 <<forced-awareness,分配认知>>造成的分片重分配。
 
 [float]
-=== Shard Balancing Heuristics
+=== 分片均衡启发式算法
 
-The following settings are used together to determine where to place each
-shard.  The cluster is balanced when no allowed rebalancing operation can bring the weight
-of any node closer to the weight of any other node by more than the `balance.threshold`.
+下列设定共同用来决定存放每个分片的位置。当允许的再均衡操作不会使得任意节点之间的权重差异超过 `balance.threshold` 配置的阈值时，集群便是均衡的。
 
 `cluster.routing.allocation.balance.shard`::
 
-     Defines the weight factor for the total number of shards allocated on a node
-     (float). Defaults to `0.45f`.  Raising this raises the tendency to
-     equalize the number of shards across all nodes in the cluster.
+     定义节点上全部分配分片的权重因子（float）。默认值是 `0.45f`。数值越大越倾向于在集群的节点层面均衡分片。
 
 `cluster.routing.allocation.balance.index`::
 
-     Defines the weight factor for the number of shards per index allocated
-      on a specific node (float). Defaults to `0.55f`.  Raising this raises the
-      tendency to equalize the number of shards per index across all nodes in
-      the cluster.
+     定义特定节点上分配的每个索引的分片的权重因子（float）。默认值是 `0.55f`。数据越大越倾向于在集群的全部节点的索引层面均衡分片。
 
 `cluster.routing.allocation.balance.threshold`::
-     Minimal optimization value of operations that should be performed (non
-      negative float). Defaults to `1.0f`.  Raising this will cause the cluster
-      to be less aggressive about optimizing the shard balance.
+     触发均衡操作的最小阈值（非负浮点型）。默认值是 `1.0f`。数值越大集群越少地进行优化分片的均衡操作。
 
 
-NOTE: Regardless of the result of the balancing algorithm, rebalancing might
-not be allowed due to forced awareness or allocation filtering.
+注意: 不管均衡的算法结果是什么，再均衡都有可能由于强制认知或者分配过滤而不被允许。
+
