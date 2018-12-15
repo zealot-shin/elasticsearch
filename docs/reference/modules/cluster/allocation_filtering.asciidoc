@@ -1,41 +1,32 @@
 [[allocation-filtering]]
-=== Shard Allocation Filtering
+=== 分片分配过滤
 
-While <<index-modules-allocation>> provides *per-index* settings to control the
-allocation of shards to nodes, cluster-level shard allocation filtering allows
-you to allow or disallow the allocation of shards from *any* index to
-particular nodes.
+尽管<<index-modules-allocation, 索引-模块-分配>>提供了索引级别的设定来控制分片到节点的分配，集群级别的分片分配过滤允许你开启或者禁用 *任意* 索引的分片到特定节点的分配。
 
-The available _dynamic_ cluster settings are as follows, where `{attribute}`
-refers to an arbitrary node attribute.:
+可用的 _动态_ 集群设定如下所示，其中 `{attribute}` 指的是任意节点属性：
 
 `cluster.routing.allocation.include.{attribute}`::
 
-    Allocate shards to a node whose `{attribute}` has at least one of the
-    comma-separated values.
+    分配分片到节点，该节点的 `{attribute}` 必须至少有一个可用逗号分隔的值。
 
 `cluster.routing.allocation.require.{attribute}`::
 
-    Only allocate shards to a node whose `{attribute}` has _all_ of the
-    comma-separated values.
+    仅分配分片到 `{attribute}` 具有全部逗号分隔的值的节点。
 
 `cluster.routing.allocation.exclude.{attribute}`::
 
-    Do not allocate shards to a node whose `{attribute}` has _any_ of the
-    comma-separated values.
+    不分配分片到 `{attribute}` 具有 _任意_ 逗号分隔的值的节点。
 
-These special attributes are also supported:
+也支持以下这些特殊的属性：
 
 [horizontal]
-`_name`::   Match nodes by node names
-`_ip`::     Match nodes by IP addresses (the IP address associated with the hostname)
-`_host`::   Match nodes by hostnames
+`_name`::   通过节点名称匹配节点
+`_ip`::     通过 IP（IP 地址与域名相关）地址匹配节点
+`_host`::   通过域名匹配节点
 
-The typical use case for cluster-wide shard allocation filtering is when you
-want to decommission a node, and you would like to move the shards from that
-node to other nodes in the cluster before shutting it down.
+典型的集群范围的分片分配过滤的用例是让一个节点退役时，你会想在关闭它之前把该节点的分片迁移到集群中其他节点。
 
-For instance, we could decommission a node using its IP address as follows:
+举个例子，我们可以使用 IP 地址来退役一个节点：
 
 [source,js]
 --------------------------------------------------
@@ -48,12 +39,9 @@ PUT _cluster/settings
 --------------------------------------------------
 // CONSOLE
 
-NOTE: Shards will only be relocated if it is possible to do so without
-breaking another routing constraint, such as never allocating a primary and
-replica shard to the same node.
+NOTE: 分片只会在不破坏其他路由约束的情形下去重分配，比如切忌把主分片和其副本分配到同一个节点。
 
-In addition to listing multiple values as a comma-separated list, all
-attribute values can be specified with wildcards, eg:
+除了使用逗号分隔的列表来列举多个值以外，全部属性值都可使用通配符来指定，例如：
 
 [source,js]
 ------------------------
