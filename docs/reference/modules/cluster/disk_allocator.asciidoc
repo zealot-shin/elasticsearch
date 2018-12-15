@@ -1,56 +1,30 @@
 [[disk-allocator]]
-=== Disk-based Shard Allocation
+=== 基于磁盘的分片分配
 
-Elasticsearch considers the available disk space on a node before deciding
-whether to allocate new shards to that node or to actively relocate shards away
-from that node.
+Elasticsearch 在决定是否分配分片到某个节点或者从某节点迁移走分片之前会考量该节点上的可用磁盘空间。
 
-Below are the settings that can be configured in the `elasticsearch.yml` config
-file or updated dynamically on a live cluster with the
-<<cluster-update-settings,cluster-update-settings>> API:
+下面是 `elasticsearch.yml` 文件中可用来配置或者可在集群中利用 <<cluster-update-settings,cluster-update-settings>> API 进行动态更新的设定。
 
 `cluster.routing.allocation.disk.threshold_enabled`::
 
-    Defaults to `true`.  Set to `false` to disable the disk allocation decider.
+    默认为 `true`。 设为 `false` 可禁用磁盘分配决策。
 
 `cluster.routing.allocation.disk.watermark.low`::
 
-    Controls the low watermark for disk usage. It defaults to `85%`, meaning
-    that Elasticsearch will not allocate shards to nodes that have more than
-    85% disk used. It can also be set to an absolute byte value (like `500mb`)
-    to prevent Elasticsearch from allocating shards if less than the specified
-    amount of space is available. This setting has no effect on the primary
-    shards of newly-created indices or, specifically, any shards that have
-    never previously been allocated.
+    控制磁盘使用率的低水位线。默认为 `85%`,意味着 Elasticsearch 不会分配分片到超过85%磁盘使用率的节点。也能被设为字节数值（比如 `500mb`）来防止 Elasticsearch 在磁盘可用空间小于指定数量时进行分片分配。该设定不会影响新创建索引的主分片，或者尤其是之前未被分配过的任何分片。
 
 `cluster.routing.allocation.disk.watermark.high`::
 
-    Controls the high watermark. It defaults to `90%`, meaning that
-    Elasticsearch will attempt to relocate shards away from a node whose disk
-    usage is above 90%. It can also be set to an absolute byte value (similarly
-    to the low watermark) to relocate shards away from a node if it has less
-    than the specified amount of free space. This setting affects the
-    allocation of all shards, whether previously allocated or not.
+    控制磁盘使用率的高水位线。默认为 `90%`，意味着 Elasticsearch 会试图将超过90%磁盘使用率的节点的分片迁移出去。也能被设为字节数值（同低水位线）使节点可用磁盘空间小于指定数量时进行分片迁移。该设定影响全部分片的分配，无论之前是否被分配。
 
 `cluster.routing.allocation.disk.watermark.flood_stage`::
 +
 --
-Controls the flood stage watermark. It defaults to 95%, meaning that
-Elasticsearch enforces a read-only index block
-(`index.blocks.read_only_allow_delete`) on every index that has one or more
-shards allocated on the node that has at least one disk exceeding the flood
-stage. This is a last resort to prevent nodes from running out of disk space.
-The index block must be released manually once there is enough disk space
-available to allow indexing operations to continue.
+控制磁盘使用率的“洪灾”水位线。默认为 `95%`，意味着 Elasticsearch 会在节点中至少有一个磁盘超过该值时，强制地将其上的每一个分片所属的索引设置为只读索引阻塞（`index.blocks.read_only_allow_delete`）。这是防止节点磁盘空间耗尽的最后对策。索引阻塞必须在有足够的的空间进行索引操作时手动释放。
 
-NOTE: You can not mix the usage of percentage values and byte values within
-these settings. Either all are set to percentage values, or all are set to byte
-values. This is so that we can we validate that the settings are internally
-consistent (that is, the low disk threshold is not more than the high disk
-threshold, and the high disk threshold is not more than the flood stage
-threshold).
+NOTE: 不能在这些设定中混合使用百分比数值和字节数值。要么全设成百分比，要么全是字节数。这样我们才能验证这些设定是内部自洽的（低水位线不会比高水位线高，高水位线也不会超过洪灾阈值）。
 
-An example of resetting the read-only index block on the `twitter` index:
+以下是一个只读索引阻塞的索引 `twitter` 的例子：
 
 [source,js]
 --------------------------------------------------
@@ -65,28 +39,15 @@ PUT /twitter/_settings
 
 `cluster.info.update.interval`::
 
-    How often Elasticsearch should check on disk usage for each node in the
-    cluster. Defaults to `30s`.
+    Elasticsearch 检查集群中节点的磁盘使用率的频率。默认为 `30s`。
 
 `cluster.routing.allocation.disk.include_relocations`::
 
-    Defaults to +true+, which means that Elasticsearch will take into account
-    shards that are currently being relocated to the target node when computing
-    a node's disk usage. Taking relocating shards' sizes into account may,
-    however, mean that the disk usage for a node is incorrectly estimated on
-    the high side, since the relocation could be 90% complete and a recently
-    retrieved disk usage would include the total size of the relocating shard
-    as well as the space already used by the running relocation.
+    默认为 +true+，意味着 Elasticsearch 计算节点的磁盘使用率时会将正在重分配到该节点的分片考虑在内。这表示对于节点的磁盘使用率有可能会错误地估算出一个高值，因为对于一个完成度90%的重分配操作，最近获取的磁盘使用率不光会计算该操作已经占用的空间，还会计算这个重分配分片的全部空间。
 
+NOTE: 百分比值指的是已使用磁盘空间，而字节值指的是空闲磁盘空间。这可能令人困惑，因为它颠倒了高和低。比如说，把低水位线设为10gb和高水位线设为5gb，是合理的，反过来则不行。
 
-NOTE: Percentage values refer to used disk space, while byte values refer to
-free disk space. This can be confusing, since it flips the meaning of high and
-low. For example, it makes sense to set the low watermark to 10gb and the high
-watermark to 5gb, but not the other way around.
-
-An example of updating the low watermark to at least 100 gigabytes free, a high
-watermark of at least 50 gigabytes free, and a flood stage watermark of 10
-gigabytes free, and updating the information about the cluster every minute:
+下面是一个更新低水位线至100gb，高水位线至50gb，洪灾阶段水位线至10gb，且每分钟刷新集群信息的例子：
 
 [source,js]
 --------------------------------------------------
