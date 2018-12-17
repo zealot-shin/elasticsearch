@@ -9,13 +9,13 @@
 
 *   <<disk-allocator, 基于硬盘的分片分配>>阐明了 Elasticsearch 如何将可用磁盘空间考虑在内，以及相关的设定。
 
-*   <<allocation-awareness, 分配意识>>和<<forced-awareness, 强制意识>>控制分片如何在不同的 racks 和可用区域分布。
+*   <<allocation-awareness, 分配感知>>和<<forced-awareness, 强制感知>>控制分片如何在不同的机架和可用区域分布。
 
 *   <<allocation-filtering, 分片分配过滤>>允许特定的节点或一组节点不被分配而使他们可以退役。
 
 除此以外，还有一些其他<<misc-cluster,各方面集群级别的设定>>.
 
-本章节所有设定都是 _动态的_ ，可在运行中的集群中使用<<cluster-update-settings,集群-更新-设定>> API 进行动态更新。
+本章节所有设定都是 _动态_ 设定，可在运行的集群中使用<<cluster-update-settings,集群-更新-设定>> API 进行动态更新。
 
 include::cluster/shards_allocation.asciidoc[]
 
