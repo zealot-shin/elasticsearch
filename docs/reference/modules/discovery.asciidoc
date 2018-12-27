@@ -1,25 +1,14 @@
 [[modules-discovery]]
-== Discovery
+== 发现
 
-The discovery module is responsible for discovering nodes within a
-cluster, as well as electing a master node.
+发现模块负责发现集群内部的节点，以及选举主节点。
 
-Note, Elasticsearch is a peer to peer based system, nodes communicate
-with one another directly if operations are delegated / broadcast. All
-the main APIs (index, delete, search) do not communicate with the master
-node. The responsibility of the master node is to maintain the global
-cluster state, and act if nodes join or leave the cluster by reassigning
-shards. Each time a cluster state is changed, the state is made known to
-the other nodes in the cluster (the manner depends on the actual
-discovery implementation).
+注意，Elasticsearch 是一个基于对等的系统，如果操作被委托/广播，节点之间直接通信。所有的主要 API (索引，删除，查询）都不与主节点通信。主节点的职责是维护全局的集群状态，以及在节点加入或离开集群时进行分片分配。每次集群状态改变时，都会被集群内其他节点获知（方式取决于实际的发现机制的实现）。
 
 [float]
-=== Settings
+=== 设定
 
-The `cluster.name` allows to create separated clusters from one another.
-The default value for the cluster name is `elasticsearch`, though it is
-recommended to change this to reflect the logical group name of the
-cluster running.
+`cluster.name` 可以用来创建彼此分隔的集群。集群名的默认值是 `elasticsearch`，但建议更改该值以反映运行的集群的逻辑组名称。
 
 include::discovery/azure.asciidoc[]
 
