@@ -1,5 +1,4 @@
 [[modules-discovery-azure-classic]]
-=== Azure Classic Discovery
+=== Azure 经典发现
 
-Azure classic discovery allows to use the Azure Classic APIs to perform automatic discovery (similar to multicast).
-It is available as a plugin. See {plugins}/discovery-azure-classic.html[discovery-azure-classic] for more information.
+Azure经典发现允许使用 Azure 经典 API 执行自动发现（类似于多播）。它可用作插件。有关更多信息，请参见{plugins}/discovery-azure-classic.html[discovery-azure-classic]。
