@@ -1,6 +1,4 @@
 [[modules-discovery-gce]]
-=== Google Compute Engine Discovery
+=== 谷歌计算引擎发现
 
-Google Compute Engine (GCE) discovery allows to use the GCE APIs to perform automatic discovery (similar to multicast).
-It is available as a plugin. See {plugins}/discovery-gce.html[discovery-gce] for more information.
-
+谷歌计算引擎（GCE）发现允许使用 GEC API 来执行自动发现（类似于多播）。可作为插件使用。有关更多信息，请参见 {plugins}/discovery-gce.html[discovery-gce]。
