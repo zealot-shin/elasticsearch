@@ -1,100 +1,58 @@
 [[modules-discovery-zen]]
-=== Zen Discovery
+=== Zen 发现
 
-Zen discovery is the built-in, default, discovery module for Elasticsearch.  It
-provides unicast and file-based discovery, and can be extended to support cloud
-environments and other forms of discovery via plugins.
+Zen 发现是 Elasticsearch 内建的，默认的发现模块。它提供单播和基于文件的发现，并且可以通过插件扩展以支持云环境和其他形式的发现。
 
-Zen discovery is integrated with other modules, for example, all communication
-between nodes is done using the <<modules-transport,transport>> module.
+Zen 发现与其他模块集成，例如，所有节点间的通信都使用 <<modules-transport,传输>> 模块完成。
 
-It is separated into several sub modules, which are explained below:
+它被分成以下几个子模块：
 
 [float]
 [[ping]]
 ==== Ping
 
-This is the process where a node uses the discovery mechanisms to find other
-nodes.
+这是一个节点使用发现机制找到其他节点的过程。
 
 [float]
 [[discovery-seed-nodes]]
-==== Seed nodes
+==== 种子节点
 
-Zen discovery uses a list of _seed_ nodes in order to start off the discovery
-process. At startup, or when electing a new master, Elasticsearch tries to
-connect to each seed node in its list, and holds a gossip-like conversation with
-them to find other nodes and to build a complete picture of the cluster. By
-default there are two methods for configuring the list of seed nodes: _unicast_
-and _file-based_.  It is recommended that the list of seed nodes comprises the
-list of master-eligible nodes in the cluster.
+Zen 发现使用一个 _种子_ 节点的列表来开始发现的过程。在启动或选举新的主节点时，Elasticsearch 尝试连接列表中每个节点，并且保有一份与各节点间八卦般的会话（gossip-like conversation）来发现其他节点，然后构建一副完整的集群的绘景。默认有2个方法来配置种子节点的列表：_单播_ 和 _基于文件_。建议种子节点列表包含集群中所有主节点。
 
 [float]
 [[unicast]]
-===== Unicast
+===== 单播
 
-Unicast discovery configures a static list of hosts for use as seed nodes.
-These hosts can be specified as hostnames or IP addresses; hosts specified as
-hostnames are resolved to IP addresses during each round of pinging. Note that
-if you are in an environment where DNS resolutions vary with time, you might
-need to adjust your <<networkaddress-cache-ttl,JVM security settings>>.
+单播发现配置了一个静态的主机列表作为种子节点。这些主机可指定成域名或者 IP 地址；指定为域名的主机会在每一轮的 ping 期间被解析为 IP 地址。注意如果环境中 DNS 解析随着时间变化，则必须调整 <<networkaddress-cache-ttl,JVM 安全设定>>。
 
-The list of hosts is set using the `discovery.zen.ping.unicast.hosts` static
-setting.  This is either an array of hosts or a comma-delimited string. Each
-value should be in the form of `host:port` or `host` (where `port` defaults to
-the setting `transport.profiles.default.port` falling back to
-`transport.tcp.port` if not set). Note that IPv6 hosts must be bracketed. The
-default for this setting is `127.0.0.1, [::1]`
+主机列表使用 `discovery.zen.ping.unicast.hosts` 静态设定进行设置。这个参数要么是一个主机的数组，要么是逗号分隔的字符串。每个值都应该是 `主机:端口` 或 `主机` （端口默认为 `transport.profiles.default.port` 的值，如果没设定，则返回 `transport.tcp.port`）的形式。请注意，IPv6主机必须加括号。此设置的默认值为 `127.0.0.1，[：：1]`。
 
-Additionally, the `discovery.zen.ping.unicast.resolve_timeout` configures the
-amount of time to wait for DNS lookups on each round of pinging. This is
-specified as a <<time-units, time unit>> and defaults to 5s.
+此外，`discovery.zen.ping.unicast.resolve_timeout` 配置了每一轮 ping 中等待 DNS 查找的时间。它被指定为一个<<time-units, 时间单位>>且默认为5s。
 
-Unicast discovery uses the <<modules-transport,transport>> module to perform the
-discovery.
+单播发现使用 <<modules-transport,传输>> 模块来执行发现。
 
 [float]
 [[file-based-hosts-provider]]
-===== File-based
+===== 基于文件
 
-In addition to hosts provided by the static `discovery.zen.ping.unicast.hosts`
-setting, it is possible to provide a list of hosts via an external file.
-Elasticsearch reloads this file when it changes, so that the list of seed nodes
-can change dynamically without needing to restart each node. For example, this
-gives a convenient mechanism for an Elasticsearch instance that is run in a
-Docker container to be dynamically supplied with a list of IP addresses to
-connect to for Zen discovery when those IP addresses may not be known at node
-startup.
+除了静态设定 `discovery.zen.ping.unicast.hosts` 提供的主机之外，也可以通过外部文件来提供主机列表。Elasticsearch 会在文件更新时重新加载该文件，以便种子节点的列表可以动态更新而无需重启每个节点。例如，对于运行在 Docker 容器中的 Elasticsearch 实例，当节点启动 IP 地址还未知时，这就给了它一个便利的机制来动态地提供一个 IP 地址列表去连接以进行 Zen 发现。
 
-To enable file-based discovery, configure the `file` hosts provider as follows:
+配置如下的提供主机的 `文件` 来激活基于文件的发现：
 
 [source,txt]
 ----------------------------------------------------------------
 discovery.zen.hosts_provider: file
 ----------------------------------------------------------------
 
-Then create a file at `$ES_PATH_CONF/unicast_hosts.txt` in the format described
-below. Any time a change is made to the `unicast_hosts.txt` file the new
-changes will be picked up by Elasticsearch and the new hosts list will be used.
+然后在 `$ES_PATH_CONF/unicast_hosts.txt` 创建一个下面描述的格式的文件。每当对 `unicast_hosts.txt` 文件进行更改时，ElasticSearch将获取新更改，并使用新主机列表。
 
-Note that the file-based discovery plugin augments the unicast hosts list in
-`elasticsearch.yml`: if there are valid unicast host entries in
-`discovery.zen.ping.unicast.hosts` then they will be used in addition to those
-supplied in `unicast_hosts.txt`.
+请注意，基于文件发现的插件会把 `elasticsearch.yml` 中的单播主机列表作为参数：如果 `discovery.zen.ping.unicast.hosts` 中存在有效的单播主机入口，那么除 `unicast_hosts.txt` 中提供的以外，这些入口也会被使用。
 
-The `discovery.zen.ping.unicast.resolve_timeout` setting also applies to DNS
-lookups for nodes specified by address via file-based discovery. This is
-specified as a <<time-units, time unit>> and defaults to 5s.
+`discovery.zen.ping.unicast.resolve_timeout` 设定也被用于通过基于文件发现指定地址的节点的 DNS 查找。它被指定为一个<<time-units, 时间单位>>且默认为5s。
 
-The format of the file is to specify one node entry per line.  Each node entry
-consists of the host (host name or IP address) and an optional transport port
-number.  If the port number is specified, is must come immediately after the
-host (on the same line) separated by a `:`.  If the port number is not
-specified, a default value of 9300 is used.
+文件的格式是每行指定一个节点入口。每个节点入口包含主机（主机名或者 IP 地址）和一个可选的传输端口号。如果指定端口号，必须紧跟在主机（同一行）后面，用 `:` 分隔。如果没有指定端口号，默认使用9300.
 
-For example, this is an example of `unicast_hosts.txt` for a cluster with four
-nodes that participate in unicast discovery, some of which are not running on
-the default port:
+例如，以下是一个有四个节点参与单播发现的集群的 `unicast_hosts.txt` 的样例，其中一些并不是运行在默认端口上：
 
 [source,txt]
 ----------------------------------------------------------------
@@ -105,122 +63,62 @@ the default port:
 [2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9301
 ----------------------------------------------------------------
 
-Host names are allowed instead of IP addresses (similar to
-`discovery.zen.ping.unicast.hosts`), and IPv6 addresses must be specified in
-brackets with the port coming after the brackets.
+如果不用 IP 地址设定，主机名也是允许的（类似 `discovery.zen.ping.unicast.hosts`），并且 IPv6 地址必须加括号，同时端口号紧跟在括号后。
 
-It is also possible to add comments to this file. All comments must appear on
-their lines starting with `#` (i.e. comments cannot start in the middle of a
-line).
+文件中也能追加注释。所有的注释必须出现在以 `#` 开始的行（也就是说，注释不能出现在一行的中间）。
 
 [float]
 [[master-election]]
-==== Master Election
+==== 主节点选举
 
-As part of the ping process a master of the cluster is either elected or joined
-to. This is done automatically. The `discovery.zen.ping_timeout` (which defaults
-to `3s`) determines how long the node will wait before deciding on starting an
-election or joining an existing cluster.  Three pings will be sent over this
-timeout interval. In case where no decision can be reached after the timeout,
-the pinging process restarts.  In slow or congested networks, three seconds
-might not be enough for a node to become aware of the other nodes in its
-environment before making an election decision.  Increasing the timeout should
-be done with care in that case, as it will slow down the election process.  Once
-a node decides to join an existing formed cluster, it will send a join request
-to the master (`discovery.zen.join_timeout`) with a timeout defaulting at 20
-times the ping timeout.
+作为 ping 过程的一部分，集群中的一个主节点要么被选举出来要么是加入进来。这是自动完成的。`discovery.zen.ping_timeout`（默认 `3s`）决定了在决定开始选举或者加入一个存在的集群之前节点将会等待多长时间。在此超时间隔内将发送三个 ping。如果超时后无法做出决定，则 ping 进程将重新启动。在缓慢或拥挤的网络中，三秒钟可能不足以让节点在做出选举决定之前知晓其环境中的其他节点。在这种情况下，应该小心地增加超时时间，因为这样会减慢选举进程。一旦一个节点决定加入一个已经形成的集群，它将向主节点发送一个加入请求（`discovery.zen.join-timeout`），超时默认为 ping 超时的20倍。
 
-When the master node stops or has encountered a problem, the cluster nodes start
-pinging again and will elect a new master. This pinging round also serves as a
-protection against (partial) network failures where a node may unjustly think
-that the master has failed. In this case the node will simply hear from other
-nodes about the currently active master.
+当主节点停止或遇到问题时，群集节点将启动重新 ping 并选举新的主节点。这轮 ping 也是防止（部分）网络故障发生时一个节点可能错误地认为主节点失效的保护措施。在这种情况下，该节点将仅从其他节点处获取当前活跃主节点的信息。
 
-If `discovery.zen.master_election.ignore_non_master_pings` is `true`, pings from
-nodes that are not master eligible (nodes where `node.master` is `false`) are
-ignored during master election; the default value is `false`.
+如果 `discovery.zen.master_election.ignore_non_master_pings` 为 `true`，非候选主节点（`node.master` 是 `false` 的节点）的 ping 在主节点选举中会被忽略：默认值是 `false`。
 
-Nodes can be excluded from becoming a master by setting `node.master` to
-`false`.
+通过设置 `node.master` 为 `false` 可以使节点排除在主节点外。
 
-The `discovery.zen.minimum_master_nodes` sets the minimum number of master
-eligible nodes that need to join a newly elected master in order for an election
-to complete and for the elected node to accept its mastership. The same setting
-controls the minimum number of active master eligible nodes that should be a
-part of any active cluster. If this requirement is not met the active master
-node will step down and a new master election will begin.
+`discovery.zen.minimum_master_nodes` 设置了候选主节点的最小数目，以完成选举过程并让所选主节点接受其主控权。该设定也控制任何一个活跃集群中包含的最小的活跃候选主节点数。若不满足该要求，活跃主节点将退出并开始选举新的主节点。
 
-This setting must be set to a <<minimum_master_nodes,quorum>> of your master
-eligible nodes. It is recommended to avoid having only two master eligible
-nodes, since a quorum of two is two. Therefore, a loss of either master eligible
-node will result in an inoperable cluster.
+此设定必须设置为候选主节点的<<minimum_master_nodes,仲裁数目>>。建议避免只有两个候选主节点，因为2的仲裁数目是2。这样的话，失去任何一个候选主节点将导致群集无法操作。
 
 [float]
 [[fault-detection]]
-==== Fault Detection
+==== 故障检测
 
-There are two fault detection processes running. The first is by the master, to
-ping all the other nodes in the cluster and verify that they are alive. And on
-the other end, each node pings to master to verify if its still alive or an
-election process needs to be initiated.
+存在两种故障检测进程。第一种由主节点运行，用来 ping 所有集群中的其他节点来验证它们在线。第二种则反过来，每个节点 ping 主节点来验证主节点仍然在线否则就需要初始化一个选举过程。
 
-The following settings control the fault detection process using the
-`discovery.zen.fd` prefix:
+以下使用 `discovery.zen.fd` 为前缀的设定控制故障检测进程：
 
 [cols="<,<",options="header",]
 |=======================================================================
-|Setting |Description
-|`ping_interval` |How often a node gets pinged. Defaults to `1s`.
+|设定 |描述
+|`ping_interval` |一个节点被 ping 的频率。默认为 `1s`.
 
-|`ping_timeout` |How long to wait for a ping response, defaults to
-`30s`.
+|`ping_timeout` |ping 响应的等待时间，默认为 `30s`.
 
-|`ping_retries` |How many ping failures / timeouts cause a node to be
-considered failed. Defaults to `3`.
+|`ping_retries` |节点被认为失效的 ping 失败/超时 的次数。默认为 `3`.
 |=======================================================================
 
 [float]
-==== Cluster state updates
+==== 集群状态更新
 
-The master node is the only node in a cluster that can make changes to the
-cluster state. The master node processes one cluster state update at a time,
-applies the required changes and publishes the updated cluster state to all the
-other nodes in the cluster. Each node receives the publish message, acknowledges
-it, but does *not* yet apply it. If the master does not receive acknowledgement
-from at least `discovery.zen.minimum_master_nodes` nodes within a certain time
-(controlled by the `discovery.zen.commit_timeout` setting and defaults to 30
-seconds) the cluster state change is rejected.
+主节点是集群中唯一能改变集群状态的节点。主节点一次处理一个集群状态更新，应用所需的更改并将更新的群集状态发布到群集中的其他节点。每个节点接收发布消息，确认但还不会应用。如果主节点在一个特定的时间内（由 `discovery.zen.commit_timeout` 设定控制，默认是30秒）没有收到至少 `discovery.zen.minimum_master_nodes` 个节点的确认，集群状态的变更将被拒绝。
 
-Once enough nodes have responded, the cluster state is committed and a message
-will be sent to all the nodes. The nodes then proceed to apply the new cluster
-state to their internal state. The master node waits for all nodes to respond,
-up to a timeout, before going ahead processing the next updates in the queue.
-The `discovery.zen.publish_timeout` is set by default to 30 seconds and is
-measured from the moment the publishing started. Both timeout settings can be
-changed dynamically through the <<cluster-update-settings,cluster update
-settings api>>
+一旦足够的节点响应了，集群状态会被提交然后一条消息将会被发往全部节点。然后节点将继续应用新集群状态到其内部状态。主节点等待全部节点响应，直到超时，到继续处理队列中的下一个更新之前。`discovery.zen.publish_timeout` 默认设置为30秒且从发布开始的瞬间计时。两个超时设定都能通过<<cluster-update-settings,集群更新设定 api>> 进行动态变更。
 
 [float]
 [[no-master-block]]
-==== No master block
+==== 无主节点阻塞
 
-For the cluster to be fully operational, it must have an active master and the
-number of running master eligible nodes must satisfy the
-`discovery.zen.minimum_master_nodes` setting if set. The
-`discovery.zen.no_master_block` settings controls what operations should be
-rejected when there is no active master.
+为使集群完全可运行，必须有一个活跃主节点且运行的候选主节点数目必须满足 `discovery.zen.minimum_master_nodes` 设定。`discovery.zen.no_master_block` 设定控制无主节点时哪些操作应该被拒绝。
 
-The `discovery.zen.no_master_block` setting has two valid options:
+`discovery.zen.no_master_block` 设定有2个有效选项:
 
 [horizontal]
-`all`:: All operations on the node--i.e. both read & writes--will be rejected.
-This also applies for api cluster state read or write operations, like the get
-index settings, put mapping and cluster state api.
-`write`:: (default) Write operations will be rejected. Read operations will
-succeed, based on the last known cluster configuration.  This may result in
-partial reads of stale data as this node may be isolated from the rest of the
-cluster.
+`all`:: 节点上的全部操作--即是 全部读写--都被拒绝。
+这也应用于集群状态的读写操作，比如获取索引设置，设定 mappings 和集群状态 api。
+`write`:: （默认）写操作将被拒绝。读操作将根据上次已知的集群设置成功执行。这可能导致部分读取过时的数据因为该节点可能与集群中其他节点隔离了。
 
-The `discovery.zen.no_master_block` setting doesn't apply to nodes-based apis
-(for example cluster stats, node info and node stats apis).  Requests to these
-apis will not be blocked and can run on any available node.
+`discovery.zen.no_master_block` 设定不会应用到基于节点的 api（例如cluster stats， node info 和 node stats api）。对这些 api 的请求不会则色且能运行在任何一个有效的节点上。
