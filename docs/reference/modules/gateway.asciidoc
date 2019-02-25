@@ -1,50 +1,38 @@
 [[modules-gateway]]
-== Local Gateway
+== 本地 Gateway
 
-The local gateway module stores the cluster state and shard data across full
-cluster restarts.
+本地 gateway 模块负责集群元信息和重启时共享数据的存储。
 
-The following _static_ settings, which must be set on every master node,
-control how long a freshly elected master should wait before it tries to
-recover the cluster state and the cluster's data:
+以下必须在主节点设置的 _静态_ 设定，控制一个新的主节点被选举后，尝试恢复集群状态和元数据之前的等待时间：
 
 `gateway.expected_nodes`::
 
-    The number of (data or master) nodes that are expected to be in the cluster.
-    Recovery of local shards will start as soon as the expected number of
-    nodes have joined the cluster. Defaults to `0`
+    集群中预期的节点数（数据或主）。加入集群的节点数达到这个数量后立即开始本地分片的恢复。默认为 `0`
 
 `gateway.expected_master_nodes`::
 
-    The number of master nodes that are expected to be in the cluster.
-    Recovery of local shards will start as soon as the expected number of
-    master nodes have joined the cluster. Defaults to `0`
+    集群中预期的候选主节点数。加入集群的候选主节点达到这个数量后理解开始本地分片的恢复。默认为 `0`
 
 `gateway.expected_data_nodes`::
 
-    The number of data nodes that are expected to be in the cluster.
-    Recovery of local shards will start as soon as the expected number of
-    data nodes have joined the cluster. Defaults to `0`
+    集群中预期的数据节点数。加入集群的数据节点数达到这个数量后立即开始本地分片的恢复。默认为 `0`
 
 `gateway.recover_after_time`::
 
-    If the expected number of nodes is not achieved, the recovery process waits
-    for the configured amount of time before trying to recover regardless.
-    Defaults to `5m` if one of the `expected_nodes` settings is configured.
+    如果没有达到预期的节点数量，则恢复过程将等待配置的时间，再尝试恢复。如果设置了一个 `预期节点` 的设定，默认为 `5m`。
 
-Once the `recover_after_time` duration has timed out, recovery will start
-as long as the following conditions are met:
+如果等待超过 `recover_after_time` 的时间， 满足以下条件也会立即开始恢复：
 
 `gateway.recover_after_nodes`::
 
-    Recover as long as this many data or master nodes have joined the cluster.
+    只要配置数量的节点（数据或主）加入集群就可以开始恢复。
 
 `gateway.recover_after_master_nodes`::
 
-    Recover as long as this many master nodes have joined the cluster.
+    只要配置数量的候选主节点加入集群就可以开始恢复。
 
 `gateway.recover_after_data_nodes`::
 
-    Recover as long as this many data nodes have joined the cluster.
+    只要配置数量的数据节点加入集群就可以开始恢复。
 
-NOTE: These settings only take effect on a full cluster restart.
+NOTE: 这些设定只在全面重启中起作用。
