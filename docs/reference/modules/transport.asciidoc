@@ -1,66 +1,42 @@
 [[modules-transport]]
-== Transport
+== 传输
 
-The transport module is used for internal communication between nodes
-within the cluster. Each call that goes from one node to the other uses
-the transport module (for example, when an HTTP GET request is processed
-by one node, and should actually be processed by another node that holds
-the data).
+传输模块用于集群内节点间的内部通信。从一个节点到另一个节点的每个调用都是用传输模块。例如，当一个节点处理 HTTP GET 请求时，实际上是由持有该数据的另一个节点处理的。
 
-The transport mechanism is completely asynchronous in nature, meaning
-that there is no blocking thread waiting for a response. The benefit of
-using asynchronous communication is first solving the
-http://en.wikipedia.org/wiki/C10k_problem[C10k problem], as well as
-being the ideal solution for scatter (broadcast) / gather operations such
-as search in Elasticsearch.
+传输机制是完全异步的，这意味着没有阻塞线程等待响应。使用异步通信的好处是解决了 http://en.wikipedia.org/wiki/C10k_problem[C10k 问题]，也是广播请求/收集结果（例如，ES中的搜索）的理想解决方案。
 
 [float]
-=== TCP Transport
+=== TCP 传输
 
-The TCP transport is an implementation of the transport module using
-TCP. It allows for the following settings:
+TCP 传输是传输模块基于 TCP 的实现，有以下配置：
 
 [cols="<,<",options="header",]
 |=======================================================================
-|Setting |Description
-|`transport.tcp.port` |A bind port range. Defaults to `9300-9400`.
+|配置 |简介
+|`transport.tcp.port` |绑定端口范围，默认为 `9300-9400`。
 
-|`transport.publish_port` |The port that other nodes in the cluster
-should use when communicating with this node. Useful when a cluster node
-is behind a proxy or firewall and the `transport.tcp.port` is not directly
-addressable from the outside. Defaults to the actual port assigned via
-`transport.tcp.port`.
+|`transport.publish_port` |集群中其他节点在与此节点通信时应使用的端口。当集群节点位于代理或防火墙后，并且在 `transport.tcp.port` 不能从外部直接访问时，此功能很有用。默认为通过 `transport.tcp.port` 分配的实际端口。
 
-|`transport.bind_host` |The host address to bind the transport service to. Defaults to `transport.host` (if set) or `network.bind_host`.
+|`transport.bind_host` |传输服务绑定的主机地址。默认为 `transport.host`（若设置）或 `network.bind_host`。
 
-|`transport.publish_host` |The host address to publish for nodes in the cluster to connect to. Defaults to `transport.host` (if set) or `network.publish_host`.
+|`transport.publish_host` |节点在集群上发布的主机地址，其他节点连接这个地址。默认为 `transport.host`（若设置）或 `network.publish_host`。
 
-|`transport.host` |Used to set the `transport.bind_host` and the `transport.publish_host` Defaults to `transport.host` or `network.host`.
+|`transport.host` |用于设置 `transport.bind_host` 和 `transport.publish_host`。默认设置为 `transport.host` 或 `network.host`。
 
+|`transport.tcp.connect_timeout` |套接字连接超时设置。默认为 `30s`。
 
-|`transport.tcp.connect_timeout` |The socket connect timeout setting (in
-time setting format). Defaults to `30s`.
+|`transport.tcp.compress` |设置为 `true` 以在所有节点之间启用压缩（`DEFLATE`）。默认为 `false`。
 
-|`transport.tcp.compress` |Set to `true` to enable compression (`DEFLATE`)
-between all nodes. Defaults to `false`.
-
-|`transport.ping_schedule` | Schedule a regular application-level ping message
-to ensure that transport connections between nodes are kept alive. Defaults to
-`5s` in the transport client and `-1` (disabled) elsewhere. It is preferable to
-correctly configure TCP keep-alives instead of using this feature, because TCP
-keep-alives apply to all kinds of long-lived connection and not just to
-transport connections.
+|`transport.ping_schedule` | 定期发送一个应用级别的 ping 消息以确保节点间连接是活跃的。传输客户端默认为 `5s`，设置成 `-1` 为禁用。最好正确配置 TCP keep-alives 而不要使用这个配置，因为 TCP keep-alives 可应用到所有长连接而不仅仅是传输连接。
 
 |=======================================================================
 
-It also uses the common
-<<modules-network,network settings>>.
+<<modules-network,网络配置>>也一并使用
 
 [float]
-==== TCP Transport Profiles
+==== TCP 传输配置文件
 
-Elasticsearch allows you to bind to multiple ports on different interfaces by
-the use of transport profiles. See this example configuration
+Elasticsearch 允许使用传输配置文件来绑。如以下的示例配置
 
 [source,yaml]
 --------------
@@ -72,41 +48,28 @@ transport.profiles.dmz.port: 9700-9800
 transport.profiles.dmz.bind_host: 172.16.1.2
 --------------
 
-The `default` profile is special. It is used as a fallback for any other
-profiles, if those do not have a specific configuration setting set, and is how
-this node connects to other nodes in the cluster.
+`default` 配置文件是特殊的。它作为自他配置文件的后备，如果其他文件没有指定配置，则集群中的节点使用该默认配置来连接。
 
-The following parameters can be configured on each transport profile, as in the
-example above:
+如上例所示，下列参数可以在每一个传输配置文件中进行配置：
 
-* `port`: The port to bind to
-* `bind_host`: The host to bind
-* `publish_host`: The host which is published in informational APIs
-* `tcp_no_delay`: Configures the `TCP_NO_DELAY` option for this socket
-* `tcp_keep_alive`: Configures the `SO_KEEPALIVE` option for this socket
-* `reuse_address`: Configures the `SO_REUSEADDR` option for this socket
-* `tcp_send_buffer_size`: Configures the send buffer size of the socket
-* `tcp_receive_buffer_size`: Configures the receive buffer size of the socket
+* `port`: 绑定的端口
+* `bind_host`: 绑定的主机
+* `publish_host`: 信息 API 中发布的主机地址
+* `tcp_no_delay`: 配置套接字的 `TCP_NO_DELAY` 选项
+* `tcp_keep_alive`: 配置套接字的 `SO_KEEPALIVE` 选项
+* `reuse_address`: 配置该套接字的 `SO_REUSEADDR` 选项
+* `tcp_send_buffer_size`: 配置套接字的发送缓冲大小
+* `tcp_receive_buffer_size`: 配置套接字的接收缓冲大小
 
 [float]
-==== Long-lived idle connections
+==== 长期空闲链接
 
-Elasticsearch opens a number of long-lived TCP connections between each pair of
-nodes in the cluster, and some of these connections may be idle for an extended
-period of time. Nonetheless, Elasticsearch requires these connections to remain
-open, and it can disrupt the operation of the cluster if any inter-node
-connections are closed by an external influence such as a firewall. It is
-important to configure your network to preserve long-lived idle connections
-between Elasticsearch nodes, for instance by leaving `tcp_keep_alive` enabled
-and ensuring that the keepalive interval is shorter than any timeout that might
-cause idle connections to be closed, or by setting `transport.ping_schedule` if
-keepalives cannot be configured.
+Elasticsearch 为集群中的每一对节点都打开了一个长期的 TCP 连接，其中一些可能长期保持空闲。尽管如此，Elasticsearch 要求这些连接保持一直打开，且如果节点间连接被外部影响（比如防火墙）关闭时，集群的操作可能被破坏。所以将网络配置成为能够在 Elasticsearch 节点间维持长期空闲连接是很重要的，例如通过激活 `tcp_keep_alive` 同时确保存活定时间隔比任何可能造成空闲连接关闭的超时时间短，或者在保持连接机制无法配置时去配置 `transport.ping_schedule` 。
 
 [float]
 === Transport Tracer
 
-The transport module has a dedicated tracer logger which, when activated, logs incoming and out going requests. The log can be dynamically activated
-by settings the level of the `org.elasticsearch.transport.TransportService.tracer` logger to `TRACE`:
+传输模块有一个专用的 tracer 日志，当它被激活时，日志系统会记录传入和传出的请求。可以通过动态设置 `org.elasticsearch.transport.TransportService.tracer` 为 `TRACE` 级别来开启：
 
 [source,js]
 --------------------------------------------------
@@ -119,8 +82,7 @@ PUT _cluster/settings
 --------------------------------------------------
 // CONSOLE
 
-You can also control which actions will be traced, using a set of include and exclude wildcard patterns. By default every request will be traced
-except for fault detection pings:
+还可以使用一组 include 和 exclude 通配符模式来控制 tracer 的内容。默认情况下，除了故障检测的 ping 请求，所有请求都将被跟踪：
 
 [source,js]
 --------------------------------------------------
