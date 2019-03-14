@@ -1,183 +1,131 @@
 [[modules-network]]
-== Network Settings
+== 网络配置
 
-Elasticsearch binds to localhost only by default.  This is sufficient for you
-to run a local development server (or even a development cluster, if you start
-multiple nodes on the same machine), but you will need to configure some
-<<common-network-settings,basic network settings>> in order to run a real
-production cluster across multiple servers.
+Elasticsearch 默认只绑定到本地主机。对于在本地开发服务器运行是足够的（或者在一台机器上启动多个节点的开发集群），但对于在多个服务器上运行一个真正的生产用集群，还需要对一些<<common-network-settings,通用网络配置>>进行配置。
 
 [WARNING]
-.Be careful with the network configuration!
+.须谨慎对待网络配置！
 =============================
-Never expose an unprotected node to the public internet.
+绝不将一个未被保护的节点暴露在公共网络上。
 =============================
 
 [float]
 [[common-network-settings]]
-=== Commonly Used Network Settings
+=== 通用网络配置
 
 `network.host`::
 
-The node will bind to this hostname or IP address and _publish_ (advertise) this
-host to other nodes in the cluster. Accepts an IP address, hostname, a
-<<network-interface-values,special value>>, or an array of any combination of
-these. Note that any values containing a `:` (e.g., an IPv6 address or
-containing one of the <<network-interface-values,special value>>) must be quoted
-because `:` is a special character in YAML.
+节点将绑定到此主机名或 IP 地址，并将此主机公布到集群中的其他节点。接受一个 IP 地址、主机名、一个<<network-interface-values,特殊值>>，或者这些内容任意组合的数组。注意任何包含 `:` 的值（例如，一个 IPv6 地址，或包含<<network-interface-values,特殊值>>中的一个）都必须被引号括起来，因为 `:` 在 YAML 文件中是一个特殊字符。
 +
-Defaults to `_local_`.
+默认为 `_local_`。
 
 `discovery.zen.ping.unicast.hosts`::
 
-In order to join a cluster, a node needs to know the hostname or IP address of
-at least some of the other nodes in the cluster.  This setting provides the
-initial list of other nodes that this node will try to contact. Accepts IP
-addresses or hostnames.  If a hostname lookup resolves to multiple IP
-addresses then each IP address will be used for discovery.
-https://en.wikipedia.org/wiki/Round-robin_DNS[Round robin DNS] -- returning a
-different IP from a list on each lookup -- can be used for discovery; non-
-existent IP addresses will throw exceptions and cause another DNS lookup
-on the next round of pinging (subject to JVM DNS caching).
+为了加入集群，节点需要知道集群中一些其他节点的主机名或 IP 地址。此设置提供节点将尝试联系其他节点的初始列表。接受 IP 地址或主机名。如果主机名被解析为多个 IP 地址，那么每个 IP 地址都将用于发现。 https://en.wikipedia.org/wiki/Round-robin_DNS[轮询DNS]——每次查找从一个列表中返回一个不同的 IP ——也可以在发现中使用，如果 IP 地址不存在则抛出异常，并在下一轮 ping 时重新解析（取决于 JVM DNS 缓存）。
 +
-Defaults to `["127.0.0.1", "[::1]"]`.
+默认为 `["127.0.0.1", "[::1]"]`。
 
 `http.port`::
 
-Port to bind to for incoming HTTP requests. Accepts a single value or a range.
-If a range is specified, the node will bind to the first available port in the
-range.
+用于接收 HTTP 请求的绑定端口。接收单个值或范围。如果指定了一个范围，该节点将绑定到该范围内的第一个可用端口。
 +
-Defaults to `9200-9300`.
+默认为 `9200-9300`。
 
 `transport.tcp.port`::
 
-Port to bind for communication between nodes. Accepts a single value or a
-range. If a range is specified, the node will bind to the first available port
-in the range.
+为节点间通信绑定端口。接受单个值或范围。如果指定一个范围，则该节点将绑定到该范围内的第一个可用端口。
 +
-Defaults to `9300-9400`.
+默认为 `9300-9400`。
 
 [float]
 [[network-interface-values]]
-=== Special values for `network.host`
+=== `network.host`的特殊值
 
-The following special values may be passed to `network.host`:
+`network.host`允许设置以下特殊值：
 
 [horizontal]
 `_[networkInterface]_`::
 
-  Addresses of a network interface, for example `_en0_`.
+  网络接口地址，如 `_en0_`。
 
 `_local_`::
 
-  Any loopback addresses on the system, for example `127.0.0.1`.
+  代表系统上的回环地址，如 `127.0.0.1`。
 
 `_site_`::
 
-  Any site-local addresses on the system, for example `192.168.0.1`.
+  系统上的任意站点——本地地址，如 `192.168.0.1`。
 
 `_global_`::
 
-  Any globally-scoped addresses on the system, for example `8.8.8.8`.
+  系统上任意全局范围的地址，如 `8.8.8.8`。
 
 
 [float]
 ==== IPv4 vs IPv6
 
-These special values will work over both IPv4 and IPv6 by default, but you can
-also limit this with the use of `:ipv4` of `:ipv6` specifiers. For example,
-`_en0:ipv4_` would only bind to the IPv4 addresses of interface `en0`.
+默认情况下，这些特殊值在 IPv4 和 IPv6 上都可以正常工作，但是也可以使用 `:ipv4` 或 `:ipv6`说明符来明确指定。例如，`_en0:ipv4_` 只绑定到 `en0` 接口的 IPv4 地址。
 
 [TIP]
-.Discovery in the cloud
+.云环境的发现
 ================================
 
-More special settings are available when running in the cloud with either the
-{plugins}/discovery-ec2.html[EC2 discovery plugin] or the
-{plugins}/discovery-gce-network-host.html#discovery-gce-network-host[Google Compute Engine discovery plugin]
-installed.
+当运行在云上时，安装{plugins}/discovery-ec2.html[EC2 发现插件]或者{plugins}/discovery-gce-network-host.html#discovery-gce-network-host[谷歌计算引擎发现插件]可以提供更多可用的配置。
 
 ================================
 
 [float]
 [[advanced-network-settings]]
-=== Advanced network settings
+=== 高级网络配置
 
-The `network.host` setting explained in <<common-network-settings,Commonly used network settings>>
-is a shortcut which sets the _bind host_ and the _publish host_ at the same
-time. In advanced used cases, such as when running behind a proxy server, you
-may need to set these settings to different values:
+<<common-network-settings,通用网络配置>>中的 `network.host` 是同时设置绑定主机和发布主机的有效方式。在一些高级用例中，例如运行在一个代理服务器之后，可能需要为它们设置不同值：
 
 `network.bind_host`::
 
-This specifies which network interface(s) a node should bind to in order to
-listen for incoming requests.  A node can bind to multiple interfaces, e.g.
-two network cards, or a site-local address and a local address. Defaults to
-`network.host`.
+指定节点应该绑定到哪个网络接口，以便监听传入的请求。一个节点可以绑定到多个接口，例如，两个网卡，或一个站点本地地址和一个回环地址。默认为 `network.host`。
 
 `network.publish_host`::
 
-The publish host is the single interface that the node advertises to other nodes
-in the cluster, so that those nodes can connect to it. Currently an
-Elasticsearch node may be bound to multiple addresses, but only publishes one.
-If not specified, this defaults to the ``best'' address from `network.host`,
-sorted by IPv4/IPv6 stack preference, then by reachability. If you set a
-`network.host` that results in multiple bind addresses yet rely on a specific
-address for node-to-node communication, you should explicitly set
-`network.publish_host`.
+发布主机是节点向集群中发布的单个网络接口，以便其他节点来连接它。目前，Elasticsearch 可以绑定到多个地址，但只能发布一个地址。如果没有指定，默认为来自 `network.host` 的按照 IPv4/IPv6栈优先排序，然后是可达性排序的 ``最佳'' 地址。如果为 `network.host` 设置多个地址，但在节点到节点的通信中依赖于特定的地址，那么应该显示地设置 `network.publish_host`。
 
-Both of the above settings can be configured just like `network.host` -- they
-accept IP addresses, host names, and
-<<network-interface-values,special values>>.
+以上两个配置都可以像 `network.host` 一样设置——它们接受 IP 地址，主机名和<<network-interface-values,特殊值>>。
 
 [float]
 [[tcp-settings]]
-=== Advanced TCP Settings
+=== 高级 TCP 配置
 
-Any component that uses TCP (like the <<modules-http,HTTP>> and
-<<modules-transport,Transport>> modules) share the following settings:
+基于 TCP 的所有组件（如 <<modules-http,HTTP>> 和 <<modules-transport,Transport>> 模块)共享以下高级设置：
 
 [horizontal]
 `network.tcp.no_delay`::
 
-Enable or disable the https://en.wikipedia.org/wiki/Nagle%27s_algorithm[TCP no delay]
-setting. Defaults to `true`.
+https://en.wikipedia.org/wiki/Nagle%27s_algorithm[TCP no delay] 设置，默认为 `true`。
 
 `network.tcp.keep_alive`::
 
-Enable or disable https://en.wikipedia.org/wiki/Keepalive[TCP keep alive].
-Defaults to `true`.
+https://en.wikipedia.org/wiki/Keepalive[TCP keep alive] 设置，默认为 `true`。
 
 `network.tcp.reuse_address`::
 
-Should an address be reused or not. Defaults to `true` on non-windows
-machines.
+一个地址是否应该被重复使用。在非 windows 系统上默认为 `true`。
 
 `network.tcp.send_buffer_size`::
 
-The size of the TCP send buffer (specified with <<size-units,size units>>).
-By default not explicitly set.
+TCP 发送缓冲区大小（通过<<size-units,大小单位>>指定）。默认没有设置。
 
 `network.tcp.receive_buffer_size`::
 
-The size of the TCP receive buffer (specified with <<size-units,size units>>).
-By default not explicitly set.
+TCP 接收缓冲区大小（通过<<size-units,大小单位>>指定）。默认没有设置。
 
 [float]
-=== Transport and HTTP protocols
+=== 传输和 HTTP 协议
 
-An Elasticsearch node exposes two network protocols which inherit the above
-settings, but may be further configured independently:
+Elasticsearch 节点公开继承上述配置的两个网络协议，但可以进一步独立配置：
 
-TCP Transport::
+TCP 传输::
 
-Used for communication between nodes in the cluster, by the Java
-{javaclient}/transport-client.html[Transport client] and by the
-<<modules-tribe,Tribe node>>.  See the <<modules-transport,Transport module>>
-for more information.
+用于集群中节点间通信，被 Java {javaclient}/transport-client.html[传输客户端] 和<<modules-tribe,部落节点>>使用.。有关详细信息，参阅<<modules-transport,传输模块>>。
 
 HTTP::
 
-Exposes the JSON-over-HTTP interface used by all clients other than the Java
-clients. See the <<modules-http,HTTP module>> for more information.
+暴露 JSON-over-HTTP 接口，被除了 Java 客户端意外的所有客户端使用。有关详细信息，参阅<<modules-http,HTTP 模块>>。
