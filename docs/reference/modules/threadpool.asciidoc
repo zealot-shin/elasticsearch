@@ -1,61 +1,41 @@
 [[modules-threadpool]]
-== Thread Pool
+== 线程池
 
-A node holds several thread pools in order to improve how threads memory consumption
-are managed within a node. Many of these pools also have queues associated with them,
-which allow pending requests to be held instead
-of discarded.
+一个节点有数个线程池来优化节点内线程的内存消耗的管理。其中多数线程池都有自身的队列，可用来存放排队中的请求而不用丢弃它们。
 
-
-There are several thread pools, but the important ones include:
+在这许多线程池中，最重要的几个包括：
 
 `generic`::
-    For generic operations (e.g., background node discovery).
-    Thread pool type is `scaling`.
+    用于通用操作（比如后台的节点发现）。线程池类型是 `scaling`。
 
 `index`::
-    For index/delete operations. Thread pool type is `fixed`
-    with a size of `# of available processors`,
-    queue_size of `200`.  The maximum size for this pool
-    is `1 + # of available processors`.
+    用于 index/delete 操作。线程池类型为 `fixed`。线程池大小为 `处理器数量`，队列为 `200`。该线程池的最大尺寸为 `1 + 处理器数量`。
 
 `search`::
-    For count/search/suggest operations. Thread pool type is
-    `fixed_auto_queue_size` with a size of
-    `int((# of available_processors * 3) / 2) + 1`, and initial queue_size of
-    `1000`.
+    用于 count/search/suggest 操作。线程池类型是 `fixed_auto_queue_size`，大小为 `int((处理器数量 * 3) / 2) + 1`，默认队列长度为 `1000`。
 
 `get`::
-    For get operations. Thread pool type is `fixed`
-    with a size of `# of available processors`,
-    queue_size of `1000`.
+    用于 get 操作。线程池类型是 `fixed`，大小为 `处理器数量`，队列大小为 `1000`。
 
 `analyze`::
-    For analyze requests. Thread pool type is `fixed` with a size of 1, queue size of 16.
+    用于 analyze 请求。线程池类型为 `fixed`，大小为1，队列大小为16。
 
 `write`::
-    For single-document index/delete/update and bulk requests. Thread pool type
-    is `fixed` with a size of `# of available processors`, queue_size of `200`.
-    The maximum size for this pool is `1 + # of available processors`.
+    用于单个文档的 index/delete/update 以及 bulk 请求。线程池类型为 `fixed`，大小为 `处理器数量`，队列大小为 `200`。最大线程数是 `1 + 处理器数量`。
 
 `snapshot`::
-    For snapshot/restore operations. Thread pool type is `scaling` with a
-    keep-alive of `5m` and a max of `min(5, (# of available processors)/2)`.
+    用于 snapshot/restore 操作。线程池类型是 `scaling`，线程保持存活时间为 `5m`，最大线程数为 `min(5, (处理器数量)/2)`。
 
 `warmer`::
-    For segment warm-up operations. Thread pool type is `scaling` with a
-    keep-alive of `5m` and a max of `min(5, (# of available processors)/2)`.
+    用于 segment warm-up 操作。线程池类型为 `scaling`，保持存活时间为 `5m`，最大线程数为 `min(5, (处理器数量)/2)`。
 
 `refresh`::
-    For refresh operations. Thread pool type is `scaling` with a
-    keep-alive of `5m` and a max of `min(10, (# of available processors)/2)`.
+    用于 refresh 操作。线程池类型为 `scaling`，保持存活时间为 `5m`，最大线程数是 `min(10, (处理器数量)/2)`。
 
 `listener`::
-    Mainly for java client executing of action when listener threaded is set to true.
-    Thread pool type is `scaling` with a default max of `min(10, (# of available processors)/2)`.
+    主要用于 Java 客户端县城监听器被设置为 true 时执行动作。线程池类型为 `scaling`，默认最大线程数为 `min(10, (处理器数量)/2)`。
 
-Changing a specific thread pool can be done by setting its type-specific parameters; for example, changing the `index`
-thread pool to have more threads:
+通过配置线程池的类型指定参数可以改变特定线程池；例如，更改 `index` 线程池来拥有更多的线程数：
 
 [source,yaml]
 --------------------------------------------------
@@ -66,24 +46,18 @@ thread_pool:
 
 [float]
 [[types]]
-=== Thread pool types
+=== 线程池类型
 
-The following are the types of thread pools and their respective parameters:
+以下是线程池的各个类型和它们的参数：
 
 [float]
 ==== `fixed`
 
-The `fixed` thread pool holds a fixed size of threads to handle the
-requests with a queue (optionally bounded) for pending requests that
-have no threads to service them.
+`fixed` 线程池拥有固定数量的线程来处理请求，对于无可用线程的请求，将被添加到（可选的有界）中队列等待。
 
-The `size` parameter controls the number of threads, and defaults to the
-number of cores times 5.
+`size` 参数用来控制线程的数量，默认为核数乘以5。
 
-The `queue_size` allows to control the size of the queue of pending
-requests that have no threads to execute them. By default, it is set to
-`-1` which means its unbounded. When a request comes in and the queue is
-full, it will abort the request.
+`queue_size` 参数用来控需要等待的任务队列大小。默认为 `-1` 表示无限制。当请求达到时，如果队列已满，则请求将被拒绝。
 
 [source,yaml]
 --------------------------------------------------
@@ -96,36 +70,21 @@ thread_pool:
 [float]
 ==== `fixed_auto_queue_size`
 
-experimental[]
+实验性[]
 
-The `fixed_auto_queue_size` thread pool holds a fixed size of threads to handle
-the requests with a bounded queue for pending requests that have no threads to
-service them. It's similar to the `fixed` threadpool, however, the `queue_size`
-automatically adjusts according to calculations based on
-https://en.wikipedia.org/wiki/Little%27s_law[Little's Law]. These calculations
-will potentially adjust the `queue_size` up or down by 50 every time
-`auto_queue_frame_size` operations have been completed.
+`fixed_auto_queue_size` 线程池拥有固定数量的线程来处理请求，以及一个有限长的等待队列。它与 `fixed` 线程池相似，不过其 `队列大小` 将根据https://en.wikipedia.org/wiki/Little%27s_law[利特尔法则（Little's Law）]自动调整。根据该法则，每次 `auto_queue_frame_size` 操作完成时，都可能进行赠减50的 `队列大小` 调整。
 
-The `size` parameter controls the number of threads, and defaults to the
-number of cores times 5.
+`size` 用于指定线程数量，默认为核数乘以5。
 
-The `queue_size` allows to control the initial size of the queue of pending
-requests that have no threads to execute them.
+`queue_size` 指定初始队列的大小。
 
-The `min_queue_size` setting controls the minimum amount the `queue_size` can be
-adjusted to.
+`min_queue_size` 指定最小队列大小。
 
-The `max_queue_size` setting controls the maximum amount the `queue_size` can be
-adjusted to.
+`max_queue_size` 指定最大队列大小。
 
-The `auto_queue_frame_size` setting controls the number of operations during
-which measurement is taken before the queue is adjusted. It should be large
-enough that a single operation cannot unduly bias the calculation.
+`auto_queue_frame_size` 指定调整队列大小之前进行测量的操作数。它应该设置得足够大，以免一个单一操作导致过度偏离的计算。
 
-The `target_response_time` is a time value setting that indicates the targeted
-average response time for tasks in the thread pool queue. If tasks are routinely
-above this time, the thread pool queue will be adjusted down so that tasks are
-rejected.
+`target_response_time` 设定的时间值，用来指示线程池队列中任务的平均响应时间。如果如无经常高于这个时间，则线程池队列将被调小，以便拒绝任务。
 
 [source,yaml]
 --------------------------------------------------
@@ -142,12 +101,9 @@ thread_pool:
 [float]
 ==== `scaling`
 
-The `scaling` thread pool holds a dynamic number of threads. This
-number is proportional to the workload and varies between the value of
-the `core` and `max` parameters.
+`scaling` 线程池拥有动态变化的线程数。线程数和负载成正比，在 `core` 和 `max` 参数之间变化。
 
-The `keep_alive` parameter determines how long a thread should be kept
-around in the thread pool without it doing any work.
+`keep_alive` 参数用来控制线程在线程池中的最长空闲时间。
 
 [source,yaml]
 --------------------------------------------------
@@ -160,32 +116,18 @@ thread_pool:
 
 [float]
 [[processors]]
-=== Processors setting
-The number of processors is automatically detected, and the thread pool
-settings are automatically set based on it. In some cases it can be
-useful to override the number of detected processors. This can be done
-by explicitly setting the `processors` setting.
+=== 处理器设置
+处理数量会被自动探测，各个线程池依据这个数量进行初始化T。某些情况下，手动设置这个参数覆盖掉默认探测的数量也是有用。手动设置可以通过明确配置 `processors` 参数来实现。
 
 [source,yaml]
 --------------------------------------------------
 processors: 2
 --------------------------------------------------
 
-There are a few use-cases for explicitly overriding the `processors`
-setting:
+有以下集中场景是需要明确设置 `processors` 数量的：
 
-. If you are running multiple instances of Elasticsearch on the same
-host but want Elasticsearch to size its thread pools as if it only has a
-fraction of the CPU, you should override the `processors` setting to the
-desired fraction (e.g., if you're running two instances of Elasticsearch
-on a 16-core machine, set `processors` to 8). Note that this is an
-expert-level use-case and there's a lot more involved than just setting
-the `processors` setting as there are other considerations like changing
-the number of garbage collector threads, pinning processes to cores,
-etc.
-. Sometimes the number of processors is wrongly detected and in such
-cases explicitly setting the `processors` setting will workaround such
-issues.
+. 在同一台主机上运行多个 Elasticsearch 实例，但是希望每个实例的线程池只据一部分 CPU 来设置，此时就要通过 `processors` 参数来手动指定为想要的处理器数量。（例如，在16核的服务器上运行2个）实例，把 `processors` 设为8）。注意，这是一个专家级的用例，除设置 `processors` 参数外，还涉及更多其他的配置，如考虑修改 GC 线程数，绑定进程到 CPU 等等。
+. 有时候自动探测的处理器数量是错的，那么这种情况必须明确设置 `processors`。
 
-In order to check the number of processors detected, use the nodes info
-API with the `os` flag.
+要检查自动探测的处理器数量，可以使用节点信息 API 中的 `os` 字段来查看。
+
