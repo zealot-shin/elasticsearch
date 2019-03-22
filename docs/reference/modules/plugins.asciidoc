@@ -1,12 +1,9 @@
 [[modules-plugins]]
-== Plugins
+== 插件
 
 [float]
-=== Plugins
+=== 插件
 
-Plugins are a way to enhance the basic Elasticsearch functionality in a
-custom manner. They range from adding custom mapping types, custom
-analyzers (in a more built in fashion), custom script engines, custom discovery
-and more.
+插件是定制地强化基本 Elasticsearch 功能的一种方式。它们涵盖了增加定制的映射类型，定制分词器（用一个更内建的方式），定制脚本引擎，定制发现机制等等。
 
-See the {plugins}/index.html[Plugins documentation] for more.
+了解更多请看 {plugins}/index.html[Plugins documentation]。
