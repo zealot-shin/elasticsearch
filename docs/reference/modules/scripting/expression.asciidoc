@@ -1,140 +1,127 @@
 [[modules-scripting-expression]]
-=== Lucene Expressions Language
+=== Lucene 表达式语言
 
-Lucene's expressions compile a `javascript` expression to bytecode. They are
-designed for high-performance custom ranking and sorting functions and are
-enabled for `inline` and `stored` scripting by default.
-
-[float]
-=== Performance
-
-Expressions were designed to have competitive performance with custom Lucene code.
-This performance is due to having low per-document overhead as opposed to other
-scripting engines: expressions do more "up-front".
-
-This allows for very fast execution, even faster than if you had written a `native` script.
+Lucene 的表达式将 `javascript` 表达式编译为字节码。他们设计用于高性能自定义排名和排序功能，并且
+默认情况下启用了 `inline` 和 `stored` 脚本。
 
 [float]
-=== Syntax
+=== 性能
 
-Expressions support a subset of javascript syntax: a single expression.
+表达式被设计为具有与自定义 Lucene 代码竞争的性能。这种性能是由于每个文档的开销比其他脚本引擎低：表达式 "up-front" 做的更多。
 
-See the link:http://lucene.apache.org/core/6_0_0/expressions/index.html?org/apache/lucene/expressions/js/package-summary.html[expressions module documentation]
-for details on what operators and functions are available.
-
-Variables in `expression` scripts are available to access:
-
-* document fields, e.g. `doc['myfield'].value`
-* variables and methods that the field supports, e.g. `doc['myfield'].empty`
-* Parameters passed into the script, e.g. `mymodifier`
-* The current document's score, `_score` (only available when used in a `script_score`)
-
-You can use Expressions scripts for `script_score`, `script_fields`, sort scripts, and numeric aggregation
-scripts, simply set the `lang` parameter to `expression`.
+这使得执行速度非常快，甚至比编写的 `本机` 脚本的速度还要快。
 
 [float]
-=== Numeric field API
+=== 语法
+
+表达式支持 javascript 语法的一个子集：单个表达式。
+
+有关可用的运算符和函数的详细信息，查看链接：http://lucene.apache.org/core/6_0_0/expressions/index.html？org/apache/lucene/expressions/js/package summary.html[表达式模块文档]
+
+`expression` 脚本中的变量可供访问：
+
+* 文档字段，例如 `doc['myfield'].value`
+* 字段支持的变量和方法，例如 `doc['myfield'].empty`
+* 传递到脚本中的参数，例如 `mymodifier`
+* 当前文档的分数，`_score`（仅在 `cript_score` 中使用时可用）
+
+可以将表达式脚本用于 `script_score`，`script_fields`，排序脚本和数字聚合脚本，只需将 `lang` 参数设置为 `expression`。
+
+[float]
+=== 数值字段 API
 [cols="<,<",options="header",]
 |=======================================================================
-|Expression |Description
-|`doc['field_name'].value` |The value of the field, as a `double`
+|表达式 |描述
+|`doc['field_name'].value` |字段值，作为 `double`。
 
-|`doc['field_name'].empty` |A boolean indicating if the field has no
-values within the doc.
+|`doc['field_name'].empty` |表示字段在文档中是否有值的布尔值。
 
-|`doc['field_name'].length` |The number of values in this document.
+|`doc['field_name'].length` |文档中值的数目。
 
-|`doc['field_name'].min()` |The minimum value of the field in this document.
+|`doc['field_name'].min()` |文档中该字段的最小值。
 
-|`doc['field_name'].max()` |The maximum value of the field in this document.
+|`doc['field_name'].max()` |文档中该字段的最大值。
 
-|`doc['field_name'].median()` |The median value of the field in this document.
+|`doc['field_name'].median()` |文档中该字段的中值。
 
-|`doc['field_name'].avg()` |The average of the values in this document.
+|`doc['field_name'].avg()` |文档中的平均值。
 
-|`doc['field_name'].sum()` |The sum of the values in this document.
+|`doc['field_name'].sum()` |文档中的值的总和。
 |=======================================================================
 
-When a document is missing the field completely, by default the value will be treated as `0`.
-You can treat it as another value instead, e.g. `doc['myfield'].empty ? 100 : doc['myfield'].value`
+当文档完全缺少字段时，默认情况下，该值将被视为 `0`。您可以将其视为另一个值，例如 `doc['myfield'].empty ? 100 : doc['myfield'].value`
 
-When a document has multiple values for the field, by default the minimum value is returned.
-You can choose a different value instead, e.g. `doc['myfield'].sum()`.
+当文档的字段具有多个值时，默认情况下返回最小值。您可以选择不同的值，例如 `doc['myfield'].sum()`。
 
-When a document is missing the field completely, by default the value will be treated as `0`.
-
-Boolean fields are exposed as numerics, with `true` mapped to `1` and `false` mapped to `0`.
-For example: `doc['on_sale'].value ? doc['price'].value * 0.5 : doc['price'].value`
+布尔字段显示为数字，其中 `true` 映射到 `1`，`false` 映射到 `0`。例如：`doc['on_sale'].value ? doc['price'].value * 0.5 : doc['price'].value`
 
 [float]
-=== Date field API
-Date fields are treated as the number of milliseconds since January 1, 1970 and
-support the Numeric Fields API above, plus access to some date-specific fields:
+=== 日期字段 API
+日期字段被视为自1970年1月1日起的毫秒数，并且支持上面的数字字段API，以及对某些特定日期字段的访问：
 
 [cols="<,<",options="header",]
 |=======================================================================
-|Expression |Description
-|`doc['field_name'].date.centuryOfEra`|Century (1-2920000)
+|表达式 |描述
+|`doc['field_name'].date.centuryOfEra`|世纪 (1-2920000)
 
-|`doc['field_name'].date.dayOfMonth`|Day (1-31), e.g. `1` for the first of the month.
+|`doc['field_name'].date.dayOfMonth`|天 (1-31), 例如 `1` 表示一个月的第一天。
 
-|`doc['field_name'].date.dayOfWeek`|Day of the week (1-7), e.g. `1` for Monday.
+|`doc['field_name'].date.dayOfWeek`|星期几 (1-7), 例如 `1` 表示星期一。
 
-|`doc['field_name'].date.dayOfYear`|Day of the year, e.g. `1` for January 1.
+|`doc['field_name'].date.dayOfYear`|一年的哪天, 例如 `1` 表示1月1号。
 
-|`doc['field_name'].date.era`|Era: `0` for BC, `1` for AD.
+|`doc['field_name'].date.era`|纪元：`0` 表示 BC，`1` 表示 AD。
 
-|`doc['field_name'].date.hourOfDay`|Hour (0-23).
+|`doc['field_name'].date.hourOfDay`|小时 (0-23)。
 
-|`doc['field_name'].date.millisOfDay`|Milliseconds within the day (0-86399999).
+|`doc['field_name'].date.millisOfDay`|一天内的毫秒数 (0-86399999)。
 
-|`doc['field_name'].date.millisOfSecond`|Milliseconds within the second (0-999).
+|`doc['field_name'].date.millisOfSecond`|一秒内的毫秒数 (0-999)。
 
-|`doc['field_name'].date.minuteOfDay`|Minute within the day (0-1439).
+|`doc['field_name'].date.minuteOfDay`|一天内的分钟数 (0-1439)。
 
-|`doc['field_name'].date.minuteOfHour`|Minute within the hour (0-59).
+|`doc['field_name'].date.minuteOfHour`|小时内的分钟数 (0-59)。
 
-|`doc['field_name'].date.monthOfYear`|Month within the year (1-12), e.g. `1` for January.
+|`doc['field_name'].date.monthOfYear`|一年的几月 (1-12)，例如 `1` 表示一月。
 
-|`doc['field_name'].date.secondOfDay`|Second within the day (0-86399).
+|`doc['field_name'].date.secondOfDay`|一天内的秒数 (0-86399)。
 
-|`doc['field_name'].date.secondOfMinute`|Second within the minute (0-59).
+|`doc['field_name'].date.secondOfMinute`|一分钟内的秒数 (0-59)。
 
-|`doc['field_name'].date.year`|Year (-292000000 - 292000000).
+|`doc['field_name'].date.year`|年 (-292000000 - 292000000)。
 
-|`doc['field_name'].date.yearOfCentury`|Year within the century (1-100).
+|`doc['field_name'].date.yearOfCentury`|世纪内的年数 (1-100)。
 
-|`doc['field_name'].date.yearOfEra`|Year within the era (1-292000000).
+|`doc['field_name'].date.yearOfEra`|纪元年数 (1-292000000)。
 |=======================================================================
 
-The following example shows the difference in years between the `date` fields date0 and date1:
+下例计算了 date0 和 date1 两个 `date` 字段年的差值：
 
 `doc['date1'].date.year - doc['date0'].date.year`
 
 [float]
-=== `geo_point` field API
+=== `地理点` 字段 API
 [cols="<,<",options="header",]
 |=======================================================================
-|Expression |Description
-|`doc['field_name'].empty` |A boolean indicating if the field has no
+|表达式 |描述
+|`doc['field_name'].empty` |表示文档中该字段是否有值的布尔值
 values within the doc.
 
-|`doc['field_name'].lat` |The latitude of the geo point.
+|`doc['field_name'].lat` |地理点纬度。
 
-|`doc['field_name'].lon` |The longitude of the geo point.
+|`doc['field_name'].lon` |地理点经度。
 |=======================================================================
 
-The following example computes distance in kilometers from Washington, DC:
+下例以公里为单位计算了到华盛顿特区的距离：
 
 `haversin(38.9072, 77.0369, doc['field_name'].lat, doc['field_name'].lon)`
 
-In this example the coordinates could have been passed as parameters to the script,
-e.g. based on geolocation of the user.
+这个例子中，坐标可以作为参数传递给脚本，例如，基于用户的地理位置。
 
 [float]
-=== Limitations
+=== 限制
 
-There are a few limitations relative to other script languages:
+相对于其他脚本语言，有一些限制：
 
-* Only numeric, boolean, date, and geo_point fields may be accessed
-* Stored fields are not available
+* 只能访问数字、布尔、日期和地理点字段
+* 存储字段不可用
