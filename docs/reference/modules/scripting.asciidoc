@@ -1,70 +1,61 @@
 [[modules-scripting]]
-== Scripting
+== 脚本
 
-The scripting module enables you to use scripts to evaluate custom
-expressions. For example, you could use a script to return "script fields"
-as part of a search request or evaluate a custom score for a query.
+脚本模块可使用脚本来计算自定义表达式。例如，可以使用脚本返回“脚本字段”作为搜索请求的一部分，或评估查询的自定义分数。
 
-The default scripting language is <<modules-scripting-painless, `Painless`>>.
-Additional `lang` plugins enable you to run scripts written in other languages.
-Everywhere a script can be used, you can include a `lang` parameter
-to specify the language of the script.
+默认的脚本语言是<<modules-scripting-painless, `Painless`>>。附加的 `lang` 插件能够运行用其他语言编写的脚本。在任何可以使用脚本的地方，都可以包含 `lang` 参数来指定脚本的语言。
 
 [float]
-=== General-purpose languages:
+=== 通用语言:
 
-These languages can be used for any purpose in the scripting APIs,
-and give the most flexibility.
+这些语言可用于脚本 API 中的任何用途，给予最大的灵活性。
 
 [cols="<,<,<",options="header",]
 |=======================================================================
-|Language
-    |Sandboxed
-    |Required plugin
+|语言
+    |沙箱
+    |要求插件
 
 |<<modules-scripting-painless, `painless`>>
-    |yes
-    |built-in
+    |是
+    |内置
 
 |=======================================================================
 
 [float]
-=== Special-purpose languages:
+=== 专用语言:
 
-These languages are less flexible, but typically have higher performance for
-certain tasks.
+这些语言不太灵活，但对某些特定任务通常具有更高的性能。
 
 [cols="<,<,<,<",options="header",]
 |=======================================================================
-|Language
-    |Sandboxed
-    |Required plugin
-    |Purpose
+|语言
+    |沙箱
+    |要求插件
+    |目的
 
 |<<modules-scripting-expression, `expression`>>
-    |yes
-    |built-in
-    |fast custom ranking and sorting
+    |是
+    |内置
+    |快速自定义排名和排序
 
 |<<search-template, `mustache`>>
-    |yes
-    |built-in
-    |templates
+    |是
+    |内置
+    |模板
 
 |<<modules-scripting-engine, `java`>>
     |n/a
-    |you write it!
-    |expert API
+    |用户自己写
+    |专家 API
 
 |=======================================================================
 
 [WARNING]
-.Scripts and security
+.脚本和安全
 =================================================
 
-Languages that are sandboxed are designed with security in mind. However, non-
-sandboxed languages can be a security issue, please read
-<<modules-scripting-security, Scripting and security>> for more details.
+沙盒语言的设计考虑了安全性。然而，非沙盒语言可能是一个安全问题，请阅读<<modules-scripting-security, 脚本和安全>>了解更多详细信息。
 
 =================================================
 
