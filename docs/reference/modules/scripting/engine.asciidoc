@@ -1,27 +1,18 @@
 [[modules-scripting-engine]]
-=== Advanced scripts using script engines
+=== 使用脚本引擎的高级脚本
 
-A `ScriptEngine` is a backend for implementing a scripting language. It may also
-be used to write scripts that need to use advanced internals of scripting. For example,
-a script that wants to use term frequencies while scoring.
+`脚本引擎` 是实现脚本语言的后端。它也可以用于编写需要使用脚本的高级内部脚本。例如，在评分时使用词语频率的脚本。
 
-The plugin {plugins}/plugin-authors.html[documentation] has more information on
-how to write a plugin so that Elasticsearch will properly load it. To register
-the `ScriptEngine`, your plugin should implement the `ScriptPlugin` interface
-and override the `getScriptEngine(Settings settings)` method.
+插件 {plugins}/plugin-authors.html[documentation] 提供了有关如何编写一个插件，以便 ElasticSearch 能够正确加载它的更多信息。要注册 `脚本引擎`，插件应实现 `ScriptPlugin` 接口并重写 `getScriptEngine(Settings settings)` 方法。
 
-The following is an example of a custom `ScriptEngine` which uses the language
-name `expert_scripts`. It implements a single script called `pure_df` which
-may be used as a search script to override each document's score as
-the document frequency of a provided term.
+下面是使用名为 `expert_scripts` 的语言的自定义 `脚本引擎` 示例。它实现了一个名为 `pure_df` 脚本，可以用作搜索脚本来覆盖每个文档的分数为提供的词语的文档频率。
 
 ["source","java",subs="attributes,callouts,macros"]
 --------------------------------------------------
 include-tagged::{plugins-examples-dir}/script-expert-scoring/src/main/java/org/elasticsearch/example/expertscript/ExpertScriptPlugin.java[expert_engine]
 --------------------------------------------------
 
-You can execute the script by specifying its `lang` as `expert_scripts`, and the name
-of the script as the script source:
+您可以通过将脚本的 `lang` 指定为 `expert_scripts` 以及脚本名称作为脚本源来执行该脚本：
 
 
 [source,js]
