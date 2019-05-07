@@ -1,46 +1,32 @@
 [[modules-scripting-fields]]
-=== Accessing document fields and special variables
+=== 访问文档字段和特殊变量
 
-Depending on where a script is used, it will have access to certain special
-variables and document fields.
+根据脚本的使用位置，它可以访问特定的变量和文档字段。
 
 [float]
-== Update scripts
+== 更新脚本
 
-A script used in the <<docs-update,update>>,
-<<docs-update-by-query,update-by-query>>, or <<docs-reindex,reindex>>
-API will have access to the `ctx` variable which exposes:
+在<<docs-update,update>>，<<docs-update-by-query,update-by-query>> 或 <<docs-reindex,reindex>> API 中使用的脚本可以访问 `ctx` 变量：
 
 [horizontal]
-`ctx._source`::     Access to the document <<mapping-source-field,`_source` field>>.
-`ctx.op`::          The operation that should be applied to the document: `index` or `delete`.
-`ctx._index` etc::  Access to <<mapping-fields,document meta-fields>>, some of which may be read-only.
+`ctx._source`::     访问文档的 <<mapping-source-field,`_source` 字段>>。
+`ctx.op`::          应用到文档的操作：`index` 或 `delete`。
+`ctx._index` 等::  访问<<mapping-fields,文档元字段>>，其中有些是只读的。
 
 [float]
-== Search and Aggregation scripts
+== 查询和聚合脚本
 
-With the exception of <<search-request-script-fields,script fields>> which are
-executed once per search hit, scripts used in search and aggregations will be
-executed once for every document which might match a query or an aggregation.
-Depending on how many documents you have, this could mean millions or billions
-of executions: these scripts need to be fast!
+除<<search-request-script-fields,脚本字段>>是每次搜索命中执行一次外，搜索和聚合中使用的脚本将对可能匹配查询或聚合的每个文档执行一次。根据文档数量，这可能意味着数百万或数十亿执行：这些脚本必须跑得飞快！
 
-Field values can be accessed from a script using
-<<modules-scripting-doc-vals,doc-values>>, or
-<<modules-scripting-stored,stored fields or `_source` field>>, which are explained below.
+使用 <<modules-scripting-doc-vals,doc-values>> 或者<<modules-scripting-stored,存储字段 或 `_source` 字段>>可以从脚本中访问字段值，其解释如下。
 
 [[scripting-score]]
 [float]
-=== Accessing the score of a document within a script
+=== 在脚本中访问文档的分数
 
-Scripts used in the <<query-dsl-function-score-query,`function_score` query>>,
-in <<search-request-sort,script-based sorting>>, or in
-<<search-aggregations,aggregations>> have access to the `_score` variable which
-represents the current relevance score of a document.
+在<<query-dsl-function-score-query,`function_score` 查询>>，<<search-request-sort,基于脚本的排序>>或者<<search-aggregations,聚合>>中使用的脚本，可以访问 `_score` 变量，它代表一个文档的当前相关性得分。
 
-Here's an example of using a script in a
-<<query-dsl-function-score-query,`function_score` query>> to alter the
-relevance `_score` of each document:
+以下是在<<query-dsl-function-score-query,`function_score` 查询>>中使用脚本来更改每个文档的相关性 `_score` 的例子：
 
 [source,js]
 -------------------------------------
@@ -80,12 +66,9 @@ GET my_index/_search
 
 [float]
 [[modules-scripting-doc-vals]]
-=== Doc Values
+=== 文档值
 
-By far the fastest most efficient way to access a field value from a
-script is to use the `doc['field_name']` syntax, which retrieves the field
-value from <<doc-values,doc values>>. Doc values are a columnar field value
-store, enabled by default on all fields except for <<text,analyzed `text` fields>>.
+到目前为止，从脚本中访问一个字段值的最高效的方法是使用 `doc['field_name']` 语法，该语法用于检索字段来自<<doc-values,文档值>>的值。文档值是列字段值存储，默认情况下在除<<text,分词的 `text` 字段>>之外的所有字段上启用。
 
 [source,js]
 -------------------------------
@@ -111,64 +94,44 @@ GET my_index/_search
 -------------------------------
 // CONSOLE
 
-Doc-values can only return "simple" field values like numbers, dates, geo-
-points, terms, etc, or arrays of these values if the field is multi-valued.
-It cannot return JSON objects.
+文档值只能返回 `简单` 的字段值如数值、日期、地理点、词等，或者如果该字段包含多值的话则是这些值组成的数组。它无法返回 JSON 对象。
 
 [NOTE]
-.Missing fields
+.缺失的字段
 ===================================================
 
-The `doc['field']` will throw an error if `field` is missing from the mappings.
-In `painless`, a check can first be done with `doc.containsKey('field')` to guard
-accessing the `doc` map.  Unfortunately, there is no way to check for the
-existence of the field in mappings in an `expression` script.
+如果 mappings 中 `field` 是缺失的， `doc['field']` 将会跑出一个错误。在 `painless` 中，会先用 `doc.containsKey('field')` 运行一个检查来确保访问 `doc` 映射。然而不幸的是，在 `表达式` 脚本中无法检查字段在 mappings 是否存在。
 
 ===================================================
 
 [NOTE]
-.Doc values and `text` fields
+.文档值和 `text` 字段
 ===================================================
 
-The `doc['field']` syntax can also be used for <<text,analyzed `text` fields>>
-if <<fielddata,`fielddata`>> is enabled, but *BEWARE*: enabling fielddata on a
-`text` field requires loading all of the terms into the JVM heap, which can be
-very expensive both in terms of memory and CPU.  It seldom makes sense to
-access `text` fields from scripts.
+如果<<fielddata,`字段数据`>>被启用，`doc['field']` 语法也能用于<<text,分词的 `text` 字段>>，但需 *注意* ：在 `text` 上启用字段数据要求加载所有词到 JVM 堆中，这对内存和 CPU 都是很昂贵的开销。从脚本中访问 `text` 字段通常没什么意义。
 
 ===================================================
 
 [float]
 [[modules-scripting-stored]]
-=== Stored Fields and `_source`
+=== 存储字段和 `_source`
 
-_Stored fields_ -- fields explicitly marked as
-<<mapping-store,`"store": true`>> -- can be accessed using the
-`_fields['field_name'].value` or `_fields['field_name'].values` syntax.
+_存储字段_ -- 明确标记为<<mapping-store,`"store": true`>>的字段 -- 可用 `_fields['field_name'].value` 或 `_fields['field_name'].values` 语法来访问。
 
-The document <<mapping-source-field,`_source`>>, which is really just a
-special stored field,  can be accessed using the `_source.field_name` syntax.
-The `_source` is loaded as a map-of-maps, so properties within object fields
-can be accessed as, for example, `_source.name.first`.
+文档的<<mapping-source-field,`_source`>>，它实际上只是一个特殊的存储字段，可以使用 `_source.field_name` 语法访问。`_source` 作为映射的映射而加载，因此对象字段中的属性可以被访问，例如 `_source.name.first`。
 
 [IMPORTANT]
-.Prefer doc-values to stored fields
+.文档值优先于存储字段
 =========================================================
 
-Stored fields (which includes the stored `_source` field) are much slower than
-doc-values.  They are  optimised for returning several fields per result,
-while doc values are optimised for accessing the value of a specific field in
-many documents.
+存住字段（包括存储的 `_source` 字段）比文档值慢得多。它们是为每个结果中返回几个字段的优化而来的，而文档值是为访问多个文档的某个特定字段的值而优化的。
 
+当生成一个<<search-request-script-fields,脚本字段>>从查询结果中返回前十个时，使用 `_source` 或 存储字段是合理的。但是对于其他查询和聚合的使用场景，应总是优先使用文档值。
 
-It makes sense to use `_source` or stored fields when generating a
-<<search-request-script-fields,script field>> for the top ten hits from a search
-result but, for other search and aggregation use cases, always prefer using
-doc values.
 =========================================================
 
 
-For instance:
+例如：
 
 [source,js]
 -------------------------------
@@ -219,20 +182,15 @@ GET my_index/_search
 }
 -------------------------------
 // CONSOLE
-<1> The `title` field is not stored and so cannot be used with the `_fields[]` syntax.
-<2> The `title` field can still be accessed from the `_source`.
+<1> 因为 `title` 字段未被存储，所以不能使用 `_fields[]` 语法。
+<2> `title` 字段依然可以从 `_source` 中访问。
 
 [TIP]
-.Stored vs `_source`
+.存储 vs `_source`
 =======================================================
 
-The `_source` field is just a special stored field, so the performance is
-similar to that of other stored fields.  The `_source` provides access to the
-original document body that was indexed (including the ability to distinguish
-`null` values from empty fields, single-value arrays from plain scalars, etc).
+`_source` 字段仅仅是一个特殊的存储的字段，所以性能和其他存储字段相似。`_source` 提供了访问被索引的原始文档的方法（包括区分 `null` 值和空白字段，单值数组和简单标量的能力等）。
 
-The only time it really makes sense to use stored fields instead of the
-`_source` field is when the `_source` is very large and it is less costly to
-access a few small stored fields instead of the entire `_source`.
+唯一真正有意义的使用存储字段而不用 `_source` 字段的时机是，`_source` 字段过于庞大并且访问个别小的存储字段相较于整个 `_source` 成本较低的时候。
 
 =======================================================
