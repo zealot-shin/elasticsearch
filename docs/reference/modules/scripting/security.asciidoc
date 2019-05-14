@@ -1,107 +1,66 @@
 [[modules-scripting-security]]
-=== Scripting and security
+=== 脚本和安全性
 
-While Elasticsearch contributors make every effort to prevent scripts from
-running amok, security is something best done in
-https://en.wikipedia.org/wiki/Defense_in_depth_(computing)[layers] because
-all software has bugs and it is important to minimize the risk of failure in
-any security layer. Find below rules of thumb for how to keep Elasticsearch
-from being a vulnerability.
+尽管 ElasticSearch 的贡献者已经竭尽全力阻止脚本胡作非为，保障安全的最好办法还是如 https://en.wikipedia.org/wiki/Defense_in_depth_(computing)[layers] 所说的那样。因为所有软件都有缺陷，所以在任何安全层面上都要最小化失败的风险。以下是如何保持 Elasticsearch 免除安全隐患的经验法则。
 
 [float]
-=== Do not run as root
-First and foremost, never run Elasticsearch as the `root` user as this would
-allow any successful effort to circumvent the other security layers to do
-*anything* on your server. Elasticsearch will refuse to start if it detects
-that it is running as `root` but this is so important that it is worth double
-and triple checking.
+=== 勿用 root 用户启动
+第一点也是最重要的一点，不要以 `root` 用户运行 ElasticSearch，因为这会允许绕过其他安全层来在服务器上做 *任何事情*。如果 ElasticSearch 检测到它以 `root` 运行，Elasticsearch 将拒绝启动。这非常重要，值得重复检查。
 
 [float]
-=== Do not expose Elasticsearch directly to users
-Do not expose Elasticsearch directly to users, instead have an application
-make requests on behalf of users. If this is not possible, have an application
-to sanitize requests from users. If *that* is not possible then have some
-mechanism to track which users did what. Understand that it is quite possible
-to write a <<search, `_search`>> that overwhelms Elasticsearch and brings down
-the cluster. All such searches should be considered bugs and the Elasticsearch
-contributors make an effort to prevent this but they are still possible.
+=== 不要直接向用户公开 ElasticSearch
+不要直接向用户公开 ElasticSearch，而是使用一个应用程序代表用户发出请求。如果不可能，就用一个应用来净化用户的请求。如果 *那* 也做不到，那就得有踪哪些用户做了什么的机制。需要明白，写一个<<search, `_search`>> 请求很有可能会压垮整个集群。所有此类搜索都应视为漏洞。虽然 ElasticSearch 的贡献者们努力阻止这一点，但它们仍可能发生。
 
 [float]
-=== Do not expose Elasticsearch directly to the Internet
-Do not expose Elasticsearch to the Internet, instead have an application
-make requests on behalf of the Internet. Do not entertain the thought of having
-an application "sanitize" requests to Elasticsearch. Understand that it is
-possible for a sufficiently determined malicious user to write searches that
-overwhelm the Elasticsearch cluster and bring it down. For example:
+=== 不要将 ElasticSearch 直接暴露在 Internet 上
 
-Good:
+不要向 Internet 公开 ElasticSearch，而是使用一个应用程序代表互联网提出请求。别怀有让一个应用程序“清理”对 ElasticSearch 的请求的想法。必须明白，可能有足够决心的恶意用户编写搜索来压垮 ElasticSearch 集群。例如：
 
-* Users type text into a search box and the text is sent directly to a
-<<query-dsl-match-query>>, <<query-dsl-match-query-phrase>>,
-<<query-dsl-simple-query-string-query>>, or any of the <<search-suggesters>>.
-* Running a script with any of the above queries that was written as part of
-the application development process.
-* Running a script with `params` provided by users.
-* User actions makes documents with a fixed structure.
+好的例子：
 
-Bad:
+* 用户在搜索框中键入文本，文本将直接发送到<<query dsl match query>>，<<query dsl match query phrase>>，<<query dsl simple query string query>>，或任何<<search suggesters>>。
+* 使用上述任何查询运行脚本，这些查询是作为应用程序开发过程来编写的。
+* 运行由用户提供 `params` 的脚本。
+* 用户操作使文档具有固定的结构。
 
-* Users can write arbitrary scripts, queries, `_search` requests.
-* User actions make documents with structure defined by users.
+
+坏的例子：
+
+* 用户可以编写任意脚本、查询和 `_search` 求。
+* 用户操作使文档具有用户定义的结构。
 
 [float]
 [[modules-scripting-other-layers]]
-=== Other security layers
-In addition to user privileges and script sandboxing Elasticsearch uses the
-http://www.oracle.com/technetwork/java/seccodeguide-139067.html[Java Security Manager]
-and native security tools as additional layers of security.
+=== 其他安全层
+除了用户权限和脚本沙盒之外，ElasticSearch 还使用 http://www.oracle.com/technetwork/java/seccodeguide-139067.html[Java 安全管理器]以及本地安全工具作为附加安全层。
 
-As part of its startup sequence Elasticsearch enables the Java Security Manager
-which limits the actions that can be taken by portions of the code. Painless
-uses this to limit the actions that generated Painless scripts can take,
-preventing them from being able to do things like write files and listen to
-sockets.
+作为启动序列的一部分，Elasticsearch 启用 Java 安全管理器来限制代码的某些部分可以采取的操作。Painless 以此来限制生成的 Painless 脚本可以采取的操作，阻止他们做诸如写文件和监听套接字之类的事情。
 
-Elasticsearch uses
-https://en.wikipedia.org/wiki/Seccomp[seccomp] in Linux,
-https://www.chromium.org/developers/design-documents/sandbox/osx-sandboxing-design[Seatbelt]
-in macOS, and
-https://msdn.microsoft.com/en-us/library/windows/desktop/ms684147[ActiveProcessLimit]
-on Windows to prevent Elasticsearch from forking or executing other processes.
+Elasticsearch 在 Linux 中使用 https://en.wikipedia.org/wiki/Seccomp[seccomp]，macOS 中用 https://www.chromium.org/developers/design-documents/sandbox/osx-sandboxing-design[Seatbelt]，Windows 中用 https://msdn.microsoft.com/en-us/library/windows/desktop/ms684147[ActiveProcessLimit]来防止 ElasticSearch 分叉（forking）或执行其他进程。
 
-Below this we describe the security settings for scripts and how you can
-change from the defaults described above. You should be very, very careful
-when allowing more than the defaults. Any extra permissions weakens the total
-security of the Elasticsearch deployment.
+下面我们将介绍脚本的安全设置以及如何更改上述默认值。当允许超过默认值时，务必加倍小心。任何额外的权限都会降低 ElasticSearch 部署的总安全性。
 
 [[allowed-script-types-setting]]
 [float]
-=== Allowed script types setting
+=== 允许的脚本类型设置
 
-By default all script types are allowed to be executed.  This can be modified using the
-setting `script.allowed_types`.  Only the types specified as part of the setting will be
-allowed to be executed.  To specify no types are allowed, set `script.allowed_types` to
-be `none`.
+默认情况下，允许执行所有脚本类型。可以使用设置 `script.allowed_types` 来更改。只有作为设置的一部分的指定类型
+允许执行。若要指定不允许任何类型，请将 `script.allowed_types` 设置为 `none`。
 
 [source,yaml]
 ----
 script.allowed_types: inline <1>
 ----
-<1> This will allow only inline scripts to be executed but not stored scripts
-(or any other types).
+<1> 这会仅允许 inline 脚本执行，存储的脚本（或任何其他类型）无法执行。
 
 [[allowed-script-contexts-setting]]
 [float]
-=== Allowed script contexts setting
+=== 允许脚本上下文设置
 
-By default all script contexts are allowed to be executed.  This can be modified using the
-setting `script.allowed_contexts`.  Only the contexts specified as part of the setting will
-be allowed to be executed.  To specify no contexts are allowed, set `script.allowed_contexts`
-to be `none`.
+默认情况下，允许执行所有脚本上下文。可以使用设置 `script.allowed_contexts` 来更改。只有指定为设置一部分的上下文将允许执行。若要指定不允许任何上下文，请设置 `script.allowed_contexts` 为 `none`。
 
 [source,yaml]
 ----
 script.allowed_contexts: search, update <1>
 ----
-<1> This will allow only search and update scripts to be executed but not
-aggs or plugin scripts (or any other contexts).
+<1> 这会仅允许查询和更新的脚本执行，聚合或插件脚本（或任何其他上下文）无法执行。
