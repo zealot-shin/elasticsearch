@@ -1,7 +1,6 @@
 [[modules-scripting-painless]]
-=== Painless Scripting Language
+=== Painless 脚本语言
 
 include::../../../painless/painless-description.asciidoc[]
 
-Ready to start scripting with Painless? See {painless}/painless-getting-started.html[Getting Started with Painless] in the guide to the
-{painless}/index.html[Painless Scripting Language].
+准备好开始使用 Painless 编写脚本了吗？请参阅{painless}/index.html[Painless 脚本语言]指南中的 {painless}/painless-getting-started.html[开始编写 Painless]。
