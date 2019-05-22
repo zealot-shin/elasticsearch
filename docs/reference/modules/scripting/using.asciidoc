@@ -1,8 +1,7 @@
 [[modules-scripting-using]]
-=== How to use scripts
+=== 如何使用脚本
 
-Wherever scripting is supported in the Elasticsearch API, the syntax follows
-the same pattern:
+在 ElasticSearch API 中支持脚本的地方，语法都如以下模式：
 
 [source,js]
 -------------------------------------
@@ -13,12 +12,11 @@ the same pattern:
   }
 -------------------------------------
 // NOTCONSOLE
-<1> The language the script is written in, which defaults to `painless`.
-<2> The script itself which may be specified as `source` for an inline script or `id` for a stored script.
-<3> Any named parameters that should be passed into the script.
+<1> 脚本所使用的语言，默认为 `painless`。
+<2> 可被指定为 `source` 的行内脚本自身或存储的脚本的 `id`。
+<3> 应传给脚本的任何命名参数。
 
-For example, the following script is used in a search request to return a
-<<search-request-script-fields, scripted field>>:
+例如，以下在查询请求中的脚本用来返回一个<<search-request-script-fields, 脚本字段>>：
 
 [source,js]
 -------------------------------------
@@ -45,37 +43,31 @@ GET my_index/_search
 // CONSOLE
 
 [float]
-=== Script Parameters
+=== 脚本参数
 
 `lang`::
 
-    Specifies the language the script is written in.  Defaults to `painless`.
+    指定写脚本所用的语言。默认为 `painless`。
 
 
 `source`, `id`::
 
-    Specifies the source of the script.  An `inline` script is specified
-    `source` as in the example above. A `stored` script is specified `id`
-    and is retrieved from the cluster state (see <<modules-scripting-stored-scripts,Stored Scripts>>).
+    指定脚本来源。上例中一个 `inline` 脚本被指定为 `source`。一个 `存储` 脚本可被指定为 `id` 并能从集群状态中检索（查看 <<modules-scripting-stored-scripts,存储脚本>>）。
 
 
 `params`::
 
-    Specifies any named parameters that are passed into the script as
-    variables.
+    指定传到脚本中作为变量的任何命名参数。
 
 [IMPORTANT]
 [[prefer-params]]
-.Prefer parameters
+.首选参数
 ========================================
 
-The first time Elasticsearch sees a new script, it compiles it and stores the
-compiled version in a cache. Compilation can be a heavy process.
+Elasticsearch 首次见到一个新脚本时，它编译并存储已编译版本到缓存中。编译可能是一个繁重的过程。
 
-If you need to pass variables into the script, you should pass them in as
-named `params` instead of hard-coding values into the script itself.  For
-example, if you want to be able to multiply a field value by different
-multipliers, don't hard-code the multiplier into the script:
+如果需要将变量传递到脚本中，则应将它们作为命名 `参数`，而不是将值硬编码到脚本本身。
+例如，如果要将字段值乘以乘数，不要将乘数硬编码到脚本中：
 
 [source,js]
 ----------------------
@@ -83,7 +75,7 @@ multipliers, don't hard-code the multiplier into the script:
 ----------------------
 // NOTCONSOLE
 
-Instead, pass it in as a named parameter:
+相反，将其作为命名参数传入：
 
 [source,js]
 ----------------------
@@ -94,24 +86,18 @@ Instead, pass it in as a named parameter:
 ----------------------
 // NOTCONSOLE
 
-The first version has to be recompiled every time the multiplier changes.  The
-second version is only compiled once.
+第一个版本必须在每次乘数更改时重新编译。第二个版本只编译一次。
 
-If you compile too many unique scripts within a small amount of time,
-Elasticsearch will reject the new dynamic scripts with a
-`circuit_breaking_exception` error. By default, up to 15 inline scripts per
-minute will be compiled. You can change this setting dynamically by setting
-`script.max_compilations_rate`.
+如果在很短的时间内编译了太多的惟一脚本，ElasticSearch 将抛出 `电路断开异常` 错误，拒绝新的动态脚本。默认情况下，每分钟最多15个行内脚本。可动态设置 `script.max_compilations_rate` 来更改此设置。
 
 ========================================
 
 [float]
 [[modules-scripting-short-script-form]]
-=== Short Script Form
-A short script form can be used for brevity. In the short form, `script` is represented
-by a string instead of an object. This string contains the source of the script.
+=== 短脚本格式
+为了简洁起见，可以使用简短的脚本形式。在短格式中，`脚本` 由字符串而不是对象表示。此字符串包含脚本来源。
 
-Short form:
+短格式：
 
 [source,js]
 ----------------------
@@ -119,7 +105,7 @@ Short form:
 ----------------------
 // NOTCONSOLE
 
-The same script in the normal form:
+在普通格式中的同样脚本：
 
 [source,js]
 ----------------------
@@ -131,17 +117,15 @@ The same script in the normal form:
 
 [float]
 [[modules-scripting-stored-scripts]]
-=== Stored Scripts
+=== 存储脚本
 
-Scripts may be stored in and retrieved from the cluster state using the
-`_scripts` end-point.
+脚本可以存储到集群状态中，并使用 `_scripts` 端点从中检索。
 
-==== Request Examples
+==== 请求样例
 
-The following are examples of using a stored script that lives at
-`/_scripts/{id}`.
+以下是使用在 `/_scripts/{id}` 中的存储脚本的例子。
 
-First, create the script called `calculate-score` in the cluster state:
+首先，创建一个叫做 `calculate-score` 的脚本到集群状态中：
 
 [source,js]
 -----------------------------------
@@ -155,7 +139,7 @@ POST _scripts/calculate-score
 -----------------------------------
 // CONSOLE
 
-This same script can be retrieved with:
+该脚本可这样检索：
 
 [source,js]
 -----------------------------------
@@ -164,7 +148,7 @@ GET _scripts/calculate-score
 // CONSOLE
 // TEST[continued]
 
-Stored scripts can be used by specifying the `id` parameters as follows:
+存储脚本可通过指定 `id` 参数来使用，如下：
 
 [source,js]
 --------------------------------------------------
@@ -185,7 +169,7 @@ GET _search
 // CONSOLE
 // TEST[continued]
 
-And deleted with:
+删除脚本:
 
 [source,js]
 -----------------------------------
@@ -196,15 +180,8 @@ DELETE _scripts/calculate-score
 
 [float]
 [[modules-scripting-using-caching]]
-=== Script Caching
+=== 脚本缓存
 
-All scripts are cached by default so that they only need to be recompiled
-when updates occur. By default, scripts do not have a time-based expiration, but
-you can change this behavior by using the `script.cache.expire` setting.
-You can configure the size of this cache by using the `script.cache.max_size` setting.
-By default, the cache size is `100`.
+所有脚本都默认被缓存，因此只有更新时需要重新编译它们。默认情况下，脚本没有基于时间的过期期限，但可以使用 `script.cache.expire` 设置更改此行为。可以使用 `script.cache.max` 设置配置此缓存的大小。默认情况下，缓存大小为 `100`。
 
-NOTE: The size of stored scripts is limited to 65,535 bytes. This can be
-changed by setting `script.max_size_in_bytes` setting to increase that soft
-limit, but if scripts are really large then a
-<<modules-scripting-engine,native script engine>> should be considered.
+NOTE: 存储脚本的大小限制为65535字节。这可以通过设置 `script.max_size_in_bytes` 来更改，以增加软性限制，但如果脚本非常大，则应考虑使用<<modules-scripting-engine,本地脚本引擎>>。
