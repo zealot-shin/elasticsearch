@@ -1,6 +1,9 @@
 [[indexing-buffer]]
-=== Indexing Buffer
+=== 索引缓冲区
 
+索引缓冲区用来存储新索引的文档。当它填满后，缓冲区中的文档被写入磁盘上的一个段。它（缓冲区）分散在节点上的所有分片之间。
+
+以下设置是 _静态_ 的，必须在群集中的每个数据节点上配置：
 The indexing buffer is used to store newly indexed documents.  When it fills
 up, the documents in the buffer are written to a segment on disk. It is divided
 between all shards on the node.
@@ -10,16 +13,12 @@ in the cluster:
 
 `indices.memory.index_buffer_size`::
 
-    Accepts either a percentage or a byte size value. It defaults to `10%`,
-    meaning that `10%` of the total heap allocated to a node will be used as the
-    indexing buffer size shared across all shards.
+    接受百分比或字节大小值。默认为 `10%`，意味着分配给节点的总堆内存的 `10%` 将用作索引缓冲区大小，并在所有分片中共享。
 
 `indices.memory.min_index_buffer_size`::
 
-    If the `index_buffer_size` is specified as a percentage, then this
-    setting can be used to specify an absolute minimum.  Defaults to `48mb`.
+    如果将 `index_buffer_size` 指定为百分比，则设置可用于指定绝对最小值。默认为 `48MB`。
 
 `indices.memory.max_index_buffer_size`::
 
-    If the `index_buffer_size` is specified as a percentage, then this
-    setting can be used to specify an absolute maximum.  Defaults to unbounded.
+    如果将 `index_buffer_size` 指定为百分比，则设置可用于指定绝对最大值。默认为无边界。
