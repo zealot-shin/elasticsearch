@@ -1,25 +1,19 @@
 [[query-cache]]
-=== Node Query Cache
+=== 节点查询缓存
 
-The query cache is responsible for caching the results of queries.
-There is one queries cache per node that is shared by all shards.
-The cache implements an LRU eviction policy: when a cache becomes full, the
-least recently used data is evicted to make way for new data.
+查询缓存负责缓存查询结果。每个节点都有一个由所有分片共享的查询缓存。
+缓存实现了一个 LRU 收回策略：当缓存变满时，最不常用的数据会被逐出以便为新数据让路。
 
-The query cache only caches queries which are being used in a filter context.
+查询缓存仅缓存在筛选上下文中使用的查询。
 
-The following setting is _static_ and must be configured on every data node in
-the cluster:
+以下设置是 _静态_ 的，必须在集群中的每个数据节点上配置：
 
 `indices.queries.cache.size`::
 
-    Controls the memory size for the filter cache , defaults to `10%`. Accepts
-    either a percentage value, like `5%`, or an exact value, like `512mb`.
+    控制过滤缓存的内存大小，默认为 `10%`。接受百分比值，如 `5%`，或一个确切值，如 `512mb`。
 
-The following setting is an _index_ setting that can be configured on a
-per-index basis:
+以下设置是一个 _索引_ 设置，可以在每个索引基础上配置：
 
 `index.queries.cache.enabled`::
 
-    Controls whether to enable query caching. Accepts `true` (default) or
-    `false`.
+    控制是否激活查询缓存。接受 `true`（默认）或 `false`。
