@@ -1,10 +1,9 @@
 [[recovery]]
-=== Indices Recovery
+=== 索引恢复
 
-The following _expert_ setting can be set to manage the recovery policy.
+以下 _专家_ 设置可用来管理恢复策略。
 
 `indices.recovery.max_bytes_per_sec`::
-    Defaults to `40mb`.
+    默认为 `40mb`。
 
-This setting can be dynamically updated on a live cluster with the
-<<cluster-update-settings,cluster-update-settings>> API:
+这个设置可在一个活跃集群中使用<<cluster-update-settings,集群更新设置>> API 来动态更新。
