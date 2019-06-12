@@ -1,19 +1,14 @@
 [[modules-tribe]]
-== Tribe node
+== 部落节点Tribe node
 
-deprecated[5.4.0,The `tribe` node is deprecated in favour of <<modules-cross-cluster-search>> and will be removed in Elasticsearch 7.0.]
+已弃用[5.4.0，`tribe` 节点已弃用，取而代之的是<<modules-cross-cluster-search>>并将在 Elasticsearch 7.0中删除。]
 
-The _tribes_ feature allows a _tribe node_ to act as a federated client across
-multiple clusters.
+_部落_ 功能允许 _部落节点_ 充当跨越多个集群的联合客户端。
 
-The tribe node works by retrieving the cluster state from all connected
-clusters and merging them into a global cluster state. With this information
-at hand, it is able to perform read and write operations against the nodes in
-all clusters as if they were local. Note that a tribe node needs to be able
-to connect to each single node in every configured cluster.
+部落节点的工作方式是从所有连接的集群获取集群状态并将它们合并到全局集群状态。有了这个信息，它就能够对全部集群的节点执行读写操作，就像它们在本地一样。注意，部落节点必须能够连接到每个配置的集群中的每个节点上。
+所有集群都好像是本地的。注意，部落节点需要能够连接到每个配置的集群中的每个节点。
 
-The `elasticsearch.yml` config file for a tribe node just needs to list the
-clusters that should be joined, for instance:
+部落节点的 `elasticsearch.yml` 配置文件只需要列出应联接的群集，例如：
 
 [source,yaml]
 --------------------------------
@@ -23,33 +18,21 @@ tribe:
     t2: <1>
         cluster.name:   cluster_two
 --------------------------------
-<1> `t1` and `t2` are arbitrary names representing the connection to each
-    cluster.
+<1> `t1` 和 `t2` 是代表所连接的每个集群的任意名字。
 
-The example above configures connections to two clusters, name `t1` and `t2`
-respectively.  The tribe node will create a <<modules-node,node client>> to
-connect each cluster using <<unicast,unicast discovery>> by default. Any
-other settings for the connection can be configured under `tribe.{name}`, just
-like the `cluster.name` in the example.
+上面的示例配置了两个集群的连接，名称分别为 `t1` 和 `t2`。部落节点将创建一个<<modules-node,节点客户端>>使用<<unicast,单播发现>>（默认）来连接每个集群。任何连接的其他设置可以在 `tribe.{name}` 下进行配置，就和示例中的 `cluster.name`一样。
 
-The merged global cluster state means that almost all operations work in the
-same way as a single cluster: distributed search, suggest, percolation,
-indexing, etc.
+合并的全局集群状态意味着几乎所有操作都与单个集群的方式相同：分布式搜索、建议、渗透，索引等。
 
-However, there are a few exceptions:
+但是，也有一些例外：
 
-* The merged view cannot handle indices with the same name in multiple
-  clusters. By default it will pick one of them, see later for on_conflict options.
+* 合并视图不能处理多个集群中的同名索引。默认情况下，它将选择其中一个，有关冲突选项，请参阅下文。
 
-* Master level read operations (eg <<cluster-state>>, <<cluster-health>>)
-  will automatically execute with a local flag set to true since there is
-  no master.
+* 主级读取操作（例如<<cluster-state,集群状态>>, <<cluster-health,集群健康>>）将自动执行，并将本地标志设置为true，因为没有 master 可言。
 
-* Master level write operations (eg <<indices-create-index>>) are not
-  allowed. These should be performed on a single cluster.
+* 主级写入操作（例如<<indices-create-index,索引创建>>）不被允许。这些应该在单个集群上执行。
 
-The tribe node can be configured to block all write operations and all
-metadata operations with:
+可以将部落节点配置为阻止所有写入操作和所有元数据操作：
 
 [source,yaml]
 --------------------------------
@@ -59,7 +42,7 @@ tribe:
         metadata: true
 --------------------------------
 
-The tribe node can also configure blocks on selected indices:
+部落节点也可以在选定的索引上配置阻塞：
 
 [source,yaml]
 --------------------------------
@@ -69,18 +52,17 @@ tribe:
         metadata.indices: hk*,ldn*
 --------------------------------
 
-When there is a conflict and multiple clusters hold the same index, by default
-the tribe node will pick one of them. This can be configured using the `tribe.on_conflict`
-setting. It defaults to `any`, but can be set to `drop` (drop indices that have
-a conflict), or `prefer_[tribeName]` to prefer the index from a specific tribe.
+
+默认情况下，当发生冲突并且多个集群持有相同的索引时，部落节点将选择其中一个。
+这可以使用 `tribe.on_conflict` 进行配置。它默认为 `any`，但可以设置为 `drop`
+（去掉具有冲突的索引），或 `prefer_[tribeName]` 来首选某个特定部落的索引。
 
 [float]
-=== Tribe node settings
+=== 部落节点设置
 
-The tribe node starts a node client for each listed cluster.  The following
-configuration options are passed down from the tribe node to each node client:
+部落节点为每个列出来的集群开启一个节点客户端。一下配置选项会从部落节点传递给每个节点客户端：
 
-* `node.name` (used to derive the `node.name` for each node client)
+* `node.name` (用于为每个节点客户端派生 `node.name`)
 * `network.host`
 * `network.bind_host`
 * `network.publish_host`
@@ -91,10 +73,7 @@ configuration options are passed down from the tribe node to each node client:
 * `path.logs`
 * `shield.*`
 
-Almost any setting (except for `path.*`) may be configured at the node client
-level itself, in which case it will override any passed through setting from
-the tribe node.  Settings you may want to set at the node client level
-include:
+几乎可以在节点客户端级别上配置任何设置（除了 `path.*`），在这种情况下，它将覆盖部落节点传递的设置。在节点客户端级别设置的设置包括：
 
 * `network.host`
 * `network.bind_host`
@@ -116,5 +95,5 @@ tribe:
     cluster.name:   cluster_two
     network.host:   10.1.2.3 <2>
 ------------------------
-<1> The `network.host` setting is inherited by `t1`.
-<2> The `t3` node client overrides the inherited from the tribe node.
+<1> `network.host` 设置被 `t1` 继承。
+<2> `t2` 节点客户端重写了从部落节点继承的配置。
