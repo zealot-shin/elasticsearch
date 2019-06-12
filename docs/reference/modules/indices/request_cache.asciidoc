@@ -1,44 +1,30 @@
 [[shard-request-cache]]
-=== Shard request cache
+=== 分片请求缓存Shard request cache
 
-When a search request is run against an index or against many indices, each
-involved shard executes the search locally and returns its local results to
-the _coordinating node_, which combines these shard-level results into a
-``global'' result set.
+当对一个索引或多个索引运行搜索请求时，每个相关的分片在本地执行搜索并将其本地结果返回到 _协调_ 节点，协调节点将这些分片级别的结果组合成 ``全局`` 结果集。
 
-The shard-level request cache module caches the local results on each shard.
-This allows frequently used (and potentially heavy) search requests to return
-results almost instantly. The requests cache is a very good fit for the logging
-use case, where only the most recent index is being actively updated --
-results from older indices will be served directly from the cache.
+分片级别请求缓存模块缓存每个分片上的本地结果。这使得频繁使用的（可能很重的）搜索请求可立即返回结果。请求缓存非常适合日志记录用例，其中只有最新的索引处于活跃的更新状态--旧索引的结果将直接从缓存中提供。
 
 [IMPORTANT]
 ===================================
 
-By default, the requests cache will only cache the results of search requests
-where `size=0`, so it will not cache `hits`,
-but it will cache `hits.total`,  <<search-aggregations,aggregations>>, and
-<<search-suggesters,suggestions>>.
+默认情况下，请求缓存将只缓存 `size=0` 的搜索请求的结果，因此不会缓存 `hits`，但它将缓存 `hits.total`，<<search-aggregations,聚合>>，以及<<search-suggesters,建议>>。
 
-Most queries that use `now` (see <<date-math>>) cannot be cached.
+大多数使用 `now`（请参见 <<date-math>>）的查询都无法缓存。
+
 ===================================
 
 [float]
-==== Cache invalidation
+==== 缓存失效Cache invalidation
 
-The cache is smart -- it keeps the same _near real-time_ promise as uncached
-search.
+缓存是智能的——同为缓存的搜索一样，它保持近实时的承诺。
 
-Cached results are invalidated automatically whenever the shard refreshes, but
-only if the data in the shard has actually changed.  In other words, you will
-always get the same results from the cache as you would for an uncached search
-request.
+缓存结果在分片刷新时自动失效，但只在分片中的数据实际发生更改时。换句话说，你会
+始终从缓存中获取与未缓存的搜索请求相同的结果。
 
-The longer the refresh interval, the longer that cached entries will remain
-valid. If the cache is full, the least recently used cache keys will be
-evicted.
+刷新间隔越长，缓存项将保留的有效时间越长。如果缓存已满，则最近使用的缓存键将为被驱逐。
 
-The cache can be expired manually with the <<indices-clearcache,`clear-cache` API>>:
+可以使用<<indices-clearcache,`清楚缓存` API>> 手动过期缓存：
 
 [source,js]
 ------------------------
@@ -48,10 +34,9 @@ POST /kimchy,elasticsearch/_cache/clear?request=true
 // TEST[s/^/PUT kimchy\nPUT elasticsearch\n/]
 
 [float]
-==== Enabling and disabling caching
+==== 启用和禁用缓存
 
-The cache is enabled by default, but can be disabled when creating a new
-index as follows:
+默认是启用缓存的，但创建新索引时可以禁用，如下所示：
 
 [source,js]
 -----------------------------
@@ -64,8 +49,7 @@ PUT /my_index
 -----------------------------
 // CONSOLE
 
-It can also be enabled or disabled dynamically on an existing index with the
-<<indices-update-settings,`update-settings`>> API:
+也可以使用<<indices-update-settings,`更新设置`>> API 在一个已经存在的索引上动态地启用或禁用：
 
 [source,js]
 -----------------------------
@@ -77,10 +61,9 @@ PUT /my_index/_settings
 
 
 [float]
-==== Enabling and disabling caching per request
+==== 每个请求启用和禁用缓存
 
-The `request_cache` query-string parameter can be used to enable or disable
-caching on a *per-request* basis.  If set, it overrides the index-level setting:
+查询字符串参数中的 `request_cache` 可用来在 *每个请求* 的基础上启用或禁用缓存。若设置的话，它会覆盖索引级别的设置：
 
 [source,js]
 -----------------------------
@@ -99,46 +82,37 @@ GET /my_index/_search?request_cache=true
 // CONSOLE
 // TEST[continued]
 
-IMPORTANT: If your query uses a script whose result is not deterministic (e.g.
-it uses a random function or references the current time) you should set the
-`request_cache` flag to `false` to disable caching for that request.
+IMPORTANT: 若查询使用了一个脚本，脚本结果不是确定性的（例如，使用了随机函数或引用了当前时间），就该把 `request_cache` 参数设置为 `false` 来对该请求禁用缓存。
 
-Requests where `size` is greater than 0 will not be cached even if the request cache is
-enabled in the index settings. To cache these requests you will need to use the
-query-string parameter detailed here.
+`size` 大于 0 的请求不会缓存，即便在索引设置中启用了请求缓存。要缓存这些请求，需要使用此处说明的查询字符串参数。
 
 [float]
-==== Cache key
+==== 缓存键
 
+把整个 JSON 体用作缓存键。这意味着如果 JSON 改变 -- 比如键用不同的顺序输出 -- 那么缓存键就无法被识别。
 The whole JSON body is used as the cache key.  This means that if the JSON
 changes -- for instance if keys are output in a different order -- then the
 cache key will not be recognised.
 
-TIP: Most JSON libraries support a _canonical_ mode which ensures that JSON
-keys are always emitted in the same order. This canonical mode can be used in
-the application to ensure that a request is always serialized in the same way.
+TIP: 多数 JSON 库都支持一个 _规范_ 模式，以确保 JSON 键总是以相同的顺序发出。此规范模式可用于应用程序，以确保请求始终以相同的方式序列化。
 
 [float]
-==== Cache settings
+==== 缓存设置
 
-The cache is managed at the node level, and has a default maximum size of `1%`
-of the heap.  This can be changed in the `config/elasticsearch.yml` file with:
+缓存是在节点级别进行管理的，并且有一个默认的最大值为堆的 `1%`。可在 `config/elasticsearch.yml` 中使用以下设置来改变：
 
 [source,yaml]
 --------------------------------
 indices.requests.cache.size: 2%
 --------------------------------
 
-Also, you can use the +indices.requests.cache.expire+ setting to specify a TTL
-for cached results, but there should be no reason to do so.  Remember that
-stale results are automatically invalidated when the index is refreshed. This
-setting is provided for completeness' sake only.
+并且，也可以使用 +indices.requests.cache.expire+ 设置来指定缓存结果的 TTL，但应该没必要这么做。
+记住，陈旧的结果在索引刷新的时候会自动失效。该设置仅是出于完整性而提供的。
 
 [float]
-==== Monitoring cache usage
+==== 监控缓存使用
 
-The size of the cache (in bytes) and the number of evictions can be viewed
-by index, with the <<indices-stats,`indices-stats`>> API:
+利用<<indices-stats,`索引统计`>> API，可查看索引的缓存大小（字节）和驱逐的数量：
 
 [source,js]
 ------------------------
@@ -146,7 +120,7 @@ GET /_stats/request_cache?human
 ------------------------
 // CONSOLE
 
-or by node with the <<cluster-nodes-stats,`nodes-stats`>> API:
+或使用<<cluster-nodes-stats,`节点统计`>> API 来看节点的：
 
 [source,js]
 ------------------------
