@@ -1,80 +1,42 @@
 [[modules-snapshots]]
-== Snapshot And Restore
+== 快照和还原
 
-A snapshot is a backup taken from a running Elasticsearch cluster. You can take
-a snapshot of individual indices or of the entire cluster and store it in a
-repository on a shared filesystem, and there are plugins that support remote
-repositories on S3, HDFS, Azure, Google Cloud Storage and more.
+快照是从正在运行的 ElasticSearch  集群中获取的备份。你可以快照单个索引或整个集群，并将其存储在共享文件系统上的一个储藏库，并且有插件支持在 S3、HDFS、Azure、Google 云存储等上的远程储藏库。
 
-Snapshots are taken incrementally. This means that when creating a snapshot of
-an index Elasticsearch will avoid copying any data that is already stored in
-the repository as part of an earlier snapshot of the same index. Therefore it
-can be efficient to take snapshots of your cluster quite frequently.
+快照是增量的。这意味着在创建索引的快照时，ElasticSearch 将避免复制任何已存储在储藏库中，作为同一索引的早期快照部分的数据。因此非常频繁地对集群进行快照也是很高效的。
 
-Snapshots can be restored into a running cluster via the restore API. When
-restoring an index it is possible to alter the name of the restored index as
-well as some of its settings, allowing a great deal of flexibility in how the
-snapshot and restore functionality can be used.
+快照可以通过还原 API 还原到正在运行的集群中。还原索引时，可以修改还原的索引的名称和其他一些设置，很大程度上给予快照和还原功能使用的灵活性。
 
-WARNING: It is not possible to back up an Elasticsearch cluster simply by
-taking a copy of the data directories of all of its nodes. Elasticsearch may be
-making changes to the contents of its data directories while it is running, and
-this means that copying its data directories cannot be expected to capture a
-consistent picture of their contents. Attempts to restore a cluster from such a
-backup may fail, reporting corruption and/or missing files, or may appear to
-have succeeded having silently lost some of its data. The only reliable way to
-back up a cluster is by using the snapshot and restore functionality.
+WARNING: 不可能通过以下方式简单地备份 ElasticSearch 集群：复制其所有节点的数据目录。Elasticsearch 可能在运行时对它的数据目录中的内容进行更改，这意味着复制其数据目录不能确保捕获一致的内容。尝试从这样的备份去还原可能会失败，报告损坏和/或丢失的文件，或者看上去已经成功，然而悄悄地丢失了一些数据。备份集群唯一可靠的方法就是使用快照和恢复功能。
 
 [float]
-=== Version compatibility
+=== 版本兼容性
 
-A snapshot contains a copy of the on-disk data structures that make up an
-index. This means that snapshots can only be restored to versions of
-Elasticsearch that can read the indices:
+快照包含构成索引磁盘上的数据结构的副本。这意味着快照只能还原到可读取该索引的 ElasticSearch 版本：
 
-* A snapshot of an index created in 5.x can be restored to 6.x.
-* A snapshot of an index created in 2.x can be restored to 5.x.
-* A snapshot of an index created in 1.x can be restored to 2.x.
+* 在5.x中创建的索引快照可以还原到6.x。
+* 在2.x中创建的索引快照可以还原到5.x。
+* 在1.x中创建的索引快照可以还原到2.x。
 
-Conversely, snapshots of indices created in 1.x **cannot** be restored to 5.x
-or 6.x, and snapshots of indices created in 2.x **cannot** be restored to 6.x.
+相反，在1.x中创建的索引的快照 **不能** 还原到5.x或6.x，以及在2.x中创建的索引的快照 **不能** 还原到6.x。
 
-Each snapshot can contain indices created in various versions of Elasticsearch,
-and when restoring a snapshot it must be possible to restore all of the indices
-into the target cluster. If any indices in a snapshot were created in an
-incompatible version, you will not be able restore the snapshot.
+每个快照可以包含在不同版本的 ElasticSearch 中创建的索引，当还原快照时，必须能够还原所有索引进入目标群集中。如果快照中的任何索引创建在不兼容的版本，将无法还原快照。
 
-IMPORTANT: When backing up your data prior to an upgrade, keep in mind that you
-won't be able to restore snapshots after you upgrade if they contain indices
-created in a version that's incompatible with the upgrade version.
+IMPORTANT: 在升级之前备份数据时，请记住如果快照包含创建在与升级后的版本不兼容的版本中的索引，升级后将无法还原快照。
 
-If you end up in a situation where you need to restore a snapshot of an index
-that is incompatible with the version of the cluster you are currently running,
-you can restore it on the latest compatible version and use
-<<reindex-from-remote,reindex-from-remote>> to rebuild the index on the current
-version. Reindexing from remote is only possible if the original index has
-source enabled. Retrieving and reindexing the data can take significantly
-longer than simply restoring a snapshot. If you have a large amount of data, we
-recommend testing the reindex from remote process with a subset of your data to
-understand the time requirements before proceeding.
+如果您处在需要恢复索引快照，而该索引与当前运行的集群版本不兼容的情况下，
+您可以在最新的兼容版本上还原它并在当前版本上使用<<reindex-from-remote,从远程重新索引>>来重建索引。
+只有当原索引启用了原始数据时才能从远程重新索引。检索和重新索引数据需要花费相比于简单还原快照来说长得多的大量时间。
+如果你有大量的数据，我们建议使用数据子集来测试从远程重新索引的过程，在继续之前了解所需要的时间。
 
 [float]
-=== Repositories
+=== 储藏库
 
-You must register a snapshot repository before you can perform snapshot and
-restore operations. We recommend creating a new snapshot repository for each
-major version. The valid repository settings depend on the repository type.
+在执行快照和恢复操作之前，必须先注册一个快照储藏库。建议为每个主要版本创建新的快照储藏库。有效的储藏库设置取决于储藏库类型。
 
-If you register same snapshot repository with multiple clusters, only
-one cluster should have write access to the repository. All other clusters
-connected to that repository should set the repository to `readonly` mode.
+如果在多个集群中注册同一个快照储藏库，则仅一个集群应该具有对储藏库的写访问权。所有其他群集连接到该储藏库时，应将储藏库设置为 `readonly` 模式。
 
-IMPORTANT: The snapshot format can change across major versions, so if you have
-clusters on different versions trying to write the same repository, snapshots
-written by one version may not be visible to the other and the repository could
-be corrupted. While setting the repository to `readonly` on all but one of the
-clusters should work with multiple clusters differing by one major version, it
-is not a supported configuration.
+IMPORTANT: 快照格式随着主要版本而变更，因此如果不同版本上的群集试图写入同一储藏库，由一个版本写入的快照可能对另一个版本不可见，然后储藏库会崩坏。除了一个集群外，将存储库对其他全部设置为 `readonly`，尽管这样可以工作在多个不同主要版本的集群上，但并不推荐这样配置。
 
 [source,js]
 -----------------------------------
@@ -89,7 +51,7 @@ PUT /_snapshot/my_backup
 // CONSOLE
 // TESTSETUP
 
-To retrieve information about a registered repository, use a GET request:
+要检索有关已注册储藏库的信息，请使用 GET 请求：
 
 [source,js]
 -----------------------------------
@@ -97,7 +59,7 @@ GET /_snapshot/my_backup
 -----------------------------------
 // CONSOLE
 
-which returns:
+将返回:
 
 [source,js]
 -----------------------------------
@@ -112,11 +74,8 @@ which returns:
 -----------------------------------
 // TESTRESPONSE
 
-To retrieve information about multiple repositories, specify a
-a comma-delimited list of repositories. You can also use the * wildcard when
-specifying repository names. For example, the following request retrieves
-information about all of the snapshot repositories that start with `repo` or
-contain `backup`:
+要检索有关多个储藏库的信息，请指定以逗号分隔的储藏库列表。当指定存储库名称时也能使用 * 通配符。
+例如，以下请求检索有关以 `repo` 开头或包含 `backup` 的所有快照储藏库的信息：
 
 [source,js]
 -----------------------------------
@@ -124,8 +83,7 @@ GET /_snapshot/repo*,*backup*
 -----------------------------------
 // CONSOLE
 
-To retrieve information about all registered snapshot repositories, omit the
-repository name or specify `_all`:
+要检索有关所有已注册快照储藏库的信息，请省略储藏库名称或指定 `all`:
 
 [source,js]
 -----------------------------------
@@ -133,7 +91,7 @@ GET /_snapshot
 -----------------------------------
 // CONSOLE
 
-or
+或
 
 [source,js]
 -----------------------------------
@@ -142,31 +100,27 @@ GET /_snapshot/_all
 // CONSOLE
 
 [float]
-===== Shared File System Repository
+===== 共享文件系统储藏库
 
-The shared file system repository (`"type": "fs"`) uses the shared file system to store snapshots. In order to register
-the shared file system repository it is necessary to mount the same shared filesystem to the same location on all
-master and data nodes. This location (or one of its parent directories) must be registered in the `path.repo`
-setting on all master and data nodes.
+共享文件系统储藏库（`"typ":"fs"`）使用共享文件系统存储快照。为了注册
+共享文件系统储藏库需要将相同的共享文件系统安装到主节点和数据节点相同位置。
+此位置（或其父目录之一）必须在所有主节点和数据节点的 `path.repo` 设置中注册。
 
-Assuming that the shared filesystem is mounted to `/mount/backups/my_fs_backup_location`, the following setting should
-be added to `elasticsearch.yml` file:
+假设共享文件系统安装到 `/mount/backups/my_fs_backup_location`，那么以下设置应该添加到 'elasticsearch.yml' 文件：
 
 [source,yaml]
 --------------
 path.repo: ["/mount/backups", "/mount/longterm_backups"]
 --------------
 
-The `path.repo` setting supports Microsoft Windows UNC paths as long as at least server name and share are specified as
-a prefix and back slashes are properly escaped:
+`path.repo` 设置支持 Microsoft Windows UNC 路径，只要至少将服务器名称和共享指定为一个前缀并且反斜杠被正确转义：
 
 [source,yaml]
 --------------
 path.repo: ["\\\\MY_SERVER\\Snapshots"]
 --------------
 
-After all nodes are restarted, the following command can be used to register the shared file system repository with
-the name `my_fs_backup`:
+重新启动所有节点后，可以使用以下命令注册名为 `my_fs_backup` 的共享文件系统储藏库：
 
 [source,js]
 -----------------------------------
@@ -182,8 +136,7 @@ PUT /_snapshot/my_fs_backup
 // CONSOLE
 // TEST[skip:no access to absolute path]
 
-If the repository location is specified as a relative path this path will be resolved against the first path specified
-in `path.repo`:
+如果将储藏库位置指定为相对路径，则将根据在 `path.repo` 中指定的第一个路径解析此路径：
 
 [source,js]
 -----------------------------------
@@ -199,69 +152,57 @@ PUT /_snapshot/my_fs_backup
 // CONSOLE
 // TEST[continued]
 
-The following settings are supported:
+支持以下设置：
 
 [horizontal]
-`location`:: Location of the snapshots. Mandatory.
-`compress`:: Turns on compression of the snapshot files. Compression is applied only to metadata files (index mapping and settings). Data files are not compressed. Defaults to `true`.
-`chunk_size`:: Big files can be broken down into chunks during snapshotting if needed. The chunk size can be specified in bytes or by
- using size value notation, i.e. 1g, 10m, 5k. Defaults to `null` (unlimited chunk size).
-`max_restore_bytes_per_sec`:: Throttles per node restore rate. Defaults to `40mb` per second.
-`max_snapshot_bytes_per_sec`:: Throttles per node snapshot rate. Defaults to `40mb` per second.
-`readonly`:: Makes repository read-only.  Defaults to `false`.
+`location`:: 快照的位置。强制性的。
+`compress`:: 开启快照文件的压缩。压缩仅应用于元数据文件（索引映射和设置）。数据文件未压缩。默认为 `true`。
+`chunk_size`:: 如果需要，可以在快照期间将大文件分解成块。块大小可以用字节或使用大小值表示法，即1g、10m、5k。默认为 `null`（块大小不受限制）。
+ `max_restore_bytes_per_sec`:: 每节点还原速率的限制。默认为每秒 `40mb`。
+`max_snapshot_bytes_per_sec`:: 每节点快照速率的限制。默认为每秒 `40mb`。
+`readonly`:: 使储藏库为只读。默认为 `false`。
 
 [float]
-===== Read-only URL Repository
+===== 只读URL储藏库
 
-The URL repository (`"type": "url"`) can be used as an alternative read-only way to access data created by the shared file
-system repository. The URL specified in the `url` parameter should point to the root of the shared filesystem repository.
-The following settings are supported:
+URL存储库（`“type”：“url”`）可用作访问由共享文件系统储藏库创建的数据的另一种只读方式。
+`url`参数中指定的 URL 应指向共享文件系统储藏库的根目录。支持以下设置：
 
 [horizontal]
-`url`:: Location of the snapshots. Mandatory.
+`url`:: 快照的位置。强制性的。
 
-URL Repository supports the following protocols: "http", "https", "ftp", "file" and "jar". URL repositories with `http:`,
-`https:`, and `ftp:` URLs has to be whitelisted by specifying allowed URLs in the `repositories.url.allowed_urls` setting.
-This setting supports wildcards in the place of host, path, query, and fragment. For example:
+URL 储藏库支持以下协议：“http”、“https”、“ftp”、“file”和“jar”。URL 储藏库包含 `http:`，`https:`，和 `ftp:` URLs 必须在 `repositories.url.allowed_urls` 设置中指定的允许的 URLs 白名单中。此设置支持在主机、路径、查询和片段位置使用通配符。例如：
 
 [source,yaml]
 -----------------------------------
 repositories.url.allowed_urls: ["http://www.example.org/root/*", "https://*.mydomain.com/*?*#*"]
 -----------------------------------
 
-URL repositories with `file:` URLs can only point to locations registered in the `path.repo` setting similar to
-shared file system repository.
+URL 储藏库包含 `file:` URLs 只能指向在 `path.repo` 设置中注册的位置，类似于共享文件系统储藏库。
 
 [float]
 [role="xpack"]
 [testenv="basic"]
-===== Source Only Repository
+===== 仅源储藏库
 
-A source repository enables you to create minimal, source-only snapshots that take up to 50% less space on disk.
-Source only snapshots contain stored fields and index metadata. They do not include index or doc values structures
-and are not searchable when restored. After restoring a source-only snapshot, you must <<docs-reindex,reindex>>
-the data into a new index.
+源储藏库使您能够创建占用磁盘空间最多减少50%的仅限源的最小快照。仅源快照包含存储字段和索引元数据。它们不包括索引或文档值结构并且在还原时不可搜索。还原仅源快照后，必须<<docs reindex，重新索引>>数据到一个新索引。
 
-Source repositories delegate to another snapshot repository for storage.
-
+源储藏库委托给另一个快照储藏库进行存储。
 
 [IMPORTANT]
 ==================================================
 
-Source only snapshots are only supported if the `_source` field is enabled and no source-filtering is applied.
-When you restore a source only snapshot:
+只有启用了 `_source` 字段且未应用源筛选时，才支持仅源快照。还原仅源快照时：
 
- * The restored index is read-only and can only serve `match_all` search or scroll requests to enable reindexing.
+ * 还原的索引是只读的，且只能用于 `match_all` 搜索或滚动请求以启用重新索引。
 
- * Queries other than `match_all` and `_get` requests are not supported.
+ * 不支持 `match_all` 和 `_get` 请求以外的查询。
 
- * The mapping of the restored index is empty, but the original mapping is available from the types top
-   level `meta` element.
+ * 还原索引的映射为空，但原始映射可从类型顶部级别的 `meta` 元素获得。
 
 ==================================================
 
-When you create a source repository, you must specify the type and name of the delegate repository
-where the snapshots will be stored:
+创建源储藏库时，必须指定代理储藏库的类型和名称存储快照的位置：
 
 [source,js]
 -----------------------------------
@@ -278,20 +219,19 @@ PUT _snapshot/my_src_only_repository
 // TEST[continued]
 
 [float]
-===== Repository plugins
+===== 储藏库插件
 
-Other repository backends are available in these official plugins:
+这些官方插件中还提供了其他储藏库后端：
 
-* {plugins}/repository-s3.html[repository-s3] for S3 repository support
-* {plugins}/repository-hdfs.html[repository-hdfs] for HDFS repository support in Hadoop environments
-* {plugins}/repository-azure.html[repository-azure] for Azure storage repositories
-* {plugins}/repository-gcs.html[repository-gcs] for Google Cloud Storage repositories
+* {plugins}/repository-s3.html[repository-s3]支持 S3 储藏库
+* {plugins}/repository-hdfs.html[repository-hdfs] 支持 Hadoop 环境中的 HDFS 储藏库
+* {plugins}/repository-azure.html[repository-azure]用于 Azure 存储储藏库
+* {plugins}/repository-gcs.html[repository-gcs]]用于 Google 云存储储藏库
 
 [float]
-===== Repository Verification
-When a repository is registered, it's immediately verified on all master and data nodes to make sure that it is functional
-on all nodes currently present in the cluster. The `verify` parameter can be used to explicitly disable the repository
-verification when registering or updating a repository:
+===== 储藏库验证
+
+当一个存储库被注册时，它会立即在所有的主节点和数据节点上进行验证，以确保它的功能在群集中当前存在的所有节点上正常。`verify` 参数可用于显式禁用注册或更新储藏库时的储藏库验证：
 
 [source,js]
 -----------------------------------
@@ -306,7 +246,7 @@ PUT /_snapshot/my_unverified_backup?verify=false
 // CONSOLE
 // TEST[continued]
 
-The verification process can also be executed manually by running the following command:
+也可以运行以下命令手动执行验证过程：
 
 [source,js]
 -----------------------------------
@@ -315,14 +255,12 @@ POST /_snapshot/my_unverified_backup/_verify
 // CONSOLE
 // TEST[continued]
 
-It returns a list of nodes where repository was successfully verified or an error message if verification process failed.
+它返回储藏库成功验证了的节点列表或者验证过程失败时返回一个错误信息。
 
 [float]
-=== Snapshot
+=== 快照
 
-A repository can contain multiple snapshots of the same cluster. Snapshots are identified by unique names within the
-cluster. A snapshot with the name `snapshot_1` in the repository `my_backup` can be created by executing the following
-command:
+储藏库可以包含同一集群的多个快照。快照由集群中的唯一名称标志。通过执行以下命令，可以在储藏库 `my_backup` 中创建名为 `snapshot_1` 的快照：
 
 [source,js]
 -----------------------------------
@@ -331,13 +269,9 @@ PUT /_snapshot/my_backup/snapshot_1?wait_for_completion=true
 // CONSOLE
 // TEST[continued]
 
-The `wait_for_completion` parameter specifies whether or not the request should return immediately after snapshot
-initialization (default) or wait for snapshot completion. During snapshot initialization, information about all
-previous snapshots is loaded into the memory, which means that in large repositories it may take several seconds (or
-even minutes) for this command to return even if the `wait_for_completion` parameter is set to `false`.
+`wait_for_completion` 参数指定请求是否应在快照初始化后立即返回（默认）或等待快照完成。在快照初始化期间，有关所有以前的快照的信息被加载到内存中，这意味着在大型储藏库中,即使  `wait_for_completion` 参数设置为 `false`，命令返回也可能需要花几秒钟（甚至几分钟）。
 
-By default a snapshot of all open and started indices in the cluster is created. This behavior can be changed by
-specifying the list of indices in the body of the snapshot request.
+默认情况下，将创建集群中所有打开和启动的索引的快照。可以通过指定快照请求正文中的索引列表来改变快照行为。
 
 [source,js]
 -----------------------------------
@@ -351,19 +285,12 @@ PUT /_snapshot/my_backup/snapshot_2?wait_for_completion=true
 // CONSOLE
 // TEST[continued]
 
-The list of indices that should be included into the snapshot can be specified using the `indices` parameter that
-supports <<multi-index,multi index syntax>>. The snapshot request also supports the
-`ignore_unavailable` option. Setting it to `true` will cause indices that do not exist to be ignored during snapshot
-creation. By default, when `ignore_unavailable` option is not set and an index is missing the snapshot request will fail.
-By setting `include_global_state` to false it's possible to prevent the cluster global state to be stored as part of
-the snapshot. By default, the entire snapshot will fail if one or more indices participating in the snapshot don't have
-all primary shards available. This behaviour can be changed by setting `partial` to `true`.
+应包含在快照中的索引列表可以使用 `indices` 参数来指定，它支持<<multi-index,多索引语法>>。快照请求还支持 `ignore_unavailable` 选项。将其设置为 `true` 将导致在创建快照期间忽略不存在的索引。默认情况下，如果未设置 `ignore_unavailable` 选项并且缺少索引，则快照请求将失败。通过将 `include_global_state` 设置为false，可以防止将群集全局状态作为快照的一部分存储。默认情况下，如果参与快照的一个或多个索引并非所有主分片可用，整个快照将会失败。通过将 `partial` 设置为 `true` 可以更改此行为。
 
-Snapshot names can be automatically derived using <<date-math-index-names,date math expressions>>, similarly as when creating
-new indices. Note that special characters need to be URI encoded.
+快照名称可以使用<<date-math-index-names,日期计算表达式>>自动派生，与创建新索引时类似。请注意，特殊字符需要进行 URI 编码。
 
-For example, creating a snapshot with the current day in the name, like `snapshot-2018.05.11`, can be achieved with
-the following command:
+例如，可以使用以下命令创建名字中有当前日期，如 `snapshot-2018.05.11`，的快照：
+
 [source,js]
 -----------------------------------
 # PUT /_snapshot/my_backup/<snapshot-{now/d}>
@@ -373,27 +300,13 @@ PUT /_snapshot/my_backup/%3Csnapshot-%7Bnow%2Fd%7D%3E
 // TEST[continued]
 
 
-The index snapshot process is incremental. In the process of making the index snapshot Elasticsearch analyses
-the list of the index files that are already stored in the repository and copies only files that were created or
-changed since the last snapshot. That allows multiple snapshots to be preserved in the repository in a compact form.
-Snapshotting process is executed in non-blocking fashion. All indexing and searching operation can continue to be
-executed against the index that is being snapshotted. However, a snapshot represents the point-in-time view of the index
-at the moment when snapshot was created, so no records that were added to the index after the snapshot process was started
-will be present in the snapshot. The snapshot process starts immediately for the primary shards that has been started
-and are not relocating at the moment. Before version 1.2.0, the snapshot operation fails if the cluster has any relocating or
-initializing primaries of indices participating in the snapshot. Starting with version 1.2.0, Elasticsearch waits for
-relocation or initialization of shards to complete before snapshotting them.
+索引快照过程是增量的。在进行索引快照的过程中，Elasticsearch 分析中已存储在储藏库中的索引文件列表，然后仅复制自上次快照以来创建的或变更的文件。这使得在储藏库中可以紧凑的形式保留多个快照。快照过程以非阻塞方式执行。所有索引和搜索操作都可以继续对正在快照的索引执行。但是，快照表示的是索引在快照创建时刻的时间点视图因此在快照进程启动后添加到索引中的记录将不会出现在快照中。对于已启动的，且不处于迁移中的主分片，快照进程立即启动。在版本1.2.0之前，如果集群中有任何正在迁移或初始化的参与快照的索引的主分片，快照操作将失败。从1.2.0版开始，ElasticSearch 会等待迁移或初始化的主分片完成再开始快照。
 
-Besides creating a copy of each index the snapshot process can also store global cluster metadata, which includes persistent
-cluster settings and templates. The transient settings and registered snapshot repositories are not stored as part of
-the snapshot.
+除了创建每个索引的副本之外，快照进程还可以存储全局集群元数据，其中包括持久性群集设置和模板。临时设置和已注册的快照储藏库不作为快照部分存储。
 
-Only one snapshot process can be executed in the cluster at any time. While snapshot of a particular shard is being
-created this shard cannot be moved to another node, which can interfere with rebalancing process and allocation
-filtering. Elasticsearch will only be able to move a shard to another node (according to the current allocation
-filtering settings and rebalancing algorithm) once the snapshot is finished.
+在集群中，任何时候只能执行一个快照进程。当特定分片的快照创建时，此分片不能移动到另一个节点，这会影响再平衡过程和分配过滤。只有当快照结束时，Elasticsearch 才只能将分片移动到另一个节点（根据当前分配过滤设置和再平衡算法）。
 
-Once a snapshot is created information about this snapshot can be obtained using the following command:
+创建快照后，可以使用以下命令获取有关此快照的信息：
 
 [source,sh]
 -----------------------------------
@@ -402,36 +315,32 @@ GET /_snapshot/my_backup/snapshot_1
 // CONSOLE
 // TEST[continued]
 
-This command returns basic information about the snapshot including start and end time, version of
-Elasticsearch that created the snapshot, the list of included indices, the current state of the
-snapshot and the list of failures that occurred during the snapshot. The snapshot `state` can be
+此命令返回有关快照的基本信息，包括开始和结束时间、创建快照的 Elasticsearch 的版本、包含索引的列表、
+快照当前状态和快照期间发生的故障列表。快照 `state` 可以是
 
 [horizontal]
 `IN_PROGRESS`::
 
-  The snapshot is currently running.
+  快照正在运行。
 
 `SUCCESS`::
 
-  The snapshot finished and all shards were stored successfully.
+  快照结束并且全部分片都成功存储。
 
 `FAILED`::
 
-  The snapshot finished with an error and failed to store any data.
+  快照以错误和存储任何数据失败而结束。
 
 `PARTIAL`::
 
-  The global cluster state was stored, but data of at least one shard wasn't stored successfully.
-  The `failure` section in this case should contain more detailed information about shards
-  that were not processed correctly.
+  已存储全局群集状态，但至少一个分片的数据未成功存储。这种情况下，`failure` 部分应包含没有正确处理的有关碎片的更详细信息。
 
 `INCOMPATIBLE`::
 
-  The snapshot was created with an old version of Elasticsearch and therefore is incompatible with
-  the current version of the cluster.
+  快照是用旧版本的 Elasticsearch 创建的，因此与群集的当前版本不兼容。
 
 
-Similar as for repositories, information about multiple snapshots can be queried in one go, supporting wildcards as well:
+与储藏库类似，可以一次查询多个快照的信息，还支持通配符：
 
 [source,sh]
 -----------------------------------
@@ -440,7 +349,7 @@ GET /_snapshot/my_backup/snapshot_*,some_other_snapshot
 // CONSOLE
 // TEST[continued]
 
-All snapshots currently stored in the repository can be listed using the following command:
+可以使用以下命令列出储藏库中当前存储的所有快照：
 
 [source,sh]
 -----------------------------------
@@ -449,19 +358,11 @@ GET /_snapshot/my_backup/_all
 // CONSOLE
 // TEST[continued]
 
-The command fails if some of the snapshots are unavailable. The boolean parameter `ignore_unavailable` can be used to
-return all snapshots that are currently available.
+如果某些快照不可用，则该命令将失败。布尔参数 `ignore_unavailable` 用于返回当前可用的所有快照。
 
-Getting all snapshots in the repository can be costly on cloud-based repositories,
-both from a cost and performance perspective.  If the only information required is
-the snapshot names/uuids in the repository and the indices in each snapshot, then
-the optional boolean parameter `verbose` can be set to `false` to execute a more
-performant and cost-effective retrieval of the snapshots in the repository.  Note
-that setting `verbose` to `false` will omit all other information about the snapshot
-such as status information, the number of snapshotted shards, etc.  The default
-value of the `verbose` parameter is `true`.
+在基于云的储藏库中，获取储藏库中的所有快照，从成本和性能的角度来看可能代价高昂。如果唯一需要的信息是储藏库中的快照名称/uuid 和每个快照中的索引，那么可选的布尔参数 `verbose` 可以设置为 `false` 以更好的性能和效率来检索储藏库中的快照。注意，将 `verbose` 设置为 `false` 将忽略有关快照的所有其他信息例如状态信息、快照分片的数量等。`verbose` 参数的默认值为 `true`。
 
-A currently running snapshot can be retrieved using the following command:
+可以使用以下命令检索当前正在运行的快照：
 
 [source,sh]
 -----------------------------------
@@ -470,7 +371,7 @@ GET /_snapshot/my_backup/_current
 // CONSOLE
 // TEST[continued]
 
-A snapshot can be deleted from the repository using the following command:
+可以使用以下命令从储藏库中删除快照：
 
 [source,sh]
 -----------------------------------
@@ -479,13 +380,9 @@ DELETE /_snapshot/my_backup/snapshot_2
 // CONSOLE
 // TEST[continued]
 
-When a snapshot is deleted from a repository, Elasticsearch deletes all files that are associated with the deleted
-snapshot and not used by any other snapshots. If the deleted snapshot operation is executed while the snapshot is being
-created the snapshotting process will be aborted and all files created as part of the snapshotting process will be
-cleaned. Therefore, the delete snapshot operation can be used to cancel long running snapshot operations that were
-started by mistake.
+从储藏库中删除快照时，Elasticsearch 将删除与已删除的快照相关联的，不由任何其他快照使用的全部文件。如果在快照被创建时执行删除快照的操作，快照过程将中止，作为快照过程一部分所创建的所有文件将清除。因此，可以使用删除快照操作取消因失误开始的长时间运行的快照操作。
 
-A repository can be unregistered using the following command:
+可以使用以下命令注销储藏库：
 
 [source,sh]
 -----------------------------------
@@ -494,13 +391,12 @@ DELETE /_snapshot/my_backup
 // CONSOLE
 // TEST[continued]
 
-When a repository is unregistered, Elasticsearch only removes the reference to the location where the repository is storing
-the snapshots. The snapshots themselves are left untouched and in place.
+当储藏库注销时，Elasticsearch 只删除对储藏库存储快照的位置的引用。快照本身保持原样。
 
 [float]
-=== Restore
+=== 还原
 
-A snapshot can be restored using the following command:
+可以使用以下命令还原快照
 
 [source,sh]
 -----------------------------------
@@ -509,17 +405,9 @@ POST /_snapshot/my_backup/snapshot_1/_restore
 // CONSOLE
 // TEST[continued]
 
-By default, all indices in the snapshot are restored, and the cluster state is
-*not* restored. It's possible to select indices that should be restored as well
-as to allow the global cluster state from being restored by using `indices` and
-`include_global_state` options in the restore request body. The list of indices
-supports <<multi-index,multi index syntax>>. The `rename_pattern`
-and `rename_replacement` options can be also used to rename indices on restore
-using regular expression that supports referencing the original text as
-explained
-http://docs.oracle.com/javase/6/docs/api/java/util/regex/Matcher.html#appendReplacement(java.lang.StringBuffer,%20java.lang.String)[here].
-Set `include_aliases` to `false` to prevent aliases from being restored together
-with associated indices
+默认将还原快照中的所有索引，且群集状态 *不会* 还原。可以在还原请求正文中包含 `indices` 和 `include_global_state` 选项，来选择应该还原的索引以及允许还原全局群集状态。索引列表支持<<multi-index,多索引语法>>。`rename_pattern` 模式和 `rename_replacement` 选项也可用于在还原时使用支持引用原始文本的正则表达式（ http://docs.oracle.com/javase/6/docs/api/java/util/regex/Matcher.html#appendReplacement(java.lang.StringBuffer,%20java.lang.String)[此]）来重命名索引。
+
+将 `include_aliases` 设置为 `false` 以防止别名与相关索引一起还原。
 
 [source,js]
 -----------------------------------
@@ -535,30 +423,17 @@ POST /_snapshot/my_backup/snapshot_1/_restore
 // CONSOLE
 // TEST[continued]
 
-The restore operation can be performed on a functioning cluster. However, an
-existing index can be only restored if it's <<indices-open-close,closed>> and
-has the same number of shards as the index in the snapshot. The restore
-operation automatically opens restored indices if they were closed and creates
-new indices if they didn't exist in the cluster. If cluster state is restored
-with `include_global_state` (defaults to `false`), the restored templates that
-don't currently exist in the cluster are added and existing templates with the
-same name are replaced by the restored templates. The restored persistent
-settings are added to the existing persistent settings.
+可以在正常工作的群集上执行还原操作。然而，对于已经存在的索引，只有处于<<indices-open-close,关闭>>状态且与快照中的索引具有相同数量的分片时，才可以还原。如果被还原的索引处于关闭状态或不存在于集群，还原操作将自动打开或创建索引。如果使用 `include_global_state`（默认为 `false`）还原集群状态，当前不存在于群集中的还原的模板将被添加，而已经存在的同名模板将被替换为还原的模板。被还原的持久设置将添加到现有的持久设置中。
 
 [float]
-==== Partial restore
+==== 部分还原
 
-By default, the entire restore operation will fail if one or more indices participating in the operation don't have
-snapshots of all shards available. It can occur if some shards failed to snapshot for example. It is still possible to
-restore such indices by setting `partial` to `true`. Please note, that only successfully snapshotted shards will be
-restored in this case and all missing shards will be recreated empty.
-
+默认情况下，如果参与还原操作的一个或多个索引不包含全部可用分片的快照，整个还原操作将会失败。例如，如果某些分片快照失败，则可能发生这种情况。但仍然可以通过将 `partial` 设置为 `true` 来还原此类索引。请注意，这种情况下，只有成功快照的分片才会被还原，所有丢失的分片将重新创建为空。
 
 [float]
-==== Changing index settings during restore
+==== 还原期间更改索引设置
 
-Most of index settings can be overridden during the restore process. For example, the following command will restore
-the index `index_1` without creating any replicas while switching back to default refresh interval:
+在还原过程中，可以覆盖大多数索引设置。例如，以下命令将还原 `index_1`，且不包含任何副本，同时调整刷新间隔到默认值：
 
 [source,js]
 -----------------------------------
@@ -576,35 +451,23 @@ POST /_snapshot/my_backup/snapshot_1/_restore
 // CONSOLE
 // TEST[continued]
 
-Please note, that some settings such as `index.number_of_shards` cannot be changed during restore operation.
+请注意，某些设置，如`index.number_of_shards` 在还原操作期间无法更改。
 
 [float]
-==== Restoring to a different cluster
+==== 还原到其他群集
 
-The information stored in a snapshot is not tied to a particular cluster or a cluster name. Therefore it's possible to
-restore a snapshot made from one cluster into another cluster. All that is required is registering the repository
-containing the snapshot in the new cluster and starting the restore process. The new cluster doesn't have to have the
-same size or topology.  However, the version of the new cluster should be the same or newer (only 1 major version newer) than the cluster that was used to create the snapshot.  For example, you can restore a 1.x snapshot to a 2.x cluster, but not a 1.x snapshot to a 5.x cluster.
+快照中存储的信息没有绑定到特定的集群或集群名称。因此可以将从一个集群生成的快照还原到另一个群集。唯一需要的就是在新集群中注册包含快照的储藏库并启动还原过程。新集群不需要拥有相同的大小或拓扑结构。但是，新集群的版本应该与创建快照的集群的版本相同或更新（只有1个主要版本差别）。例如，可以将1.x快照还原到2.x群集，但不能将1.x快照还原到5.x群集。
 
-If the new cluster has a smaller size additional considerations should be made. First of all it's necessary to make sure
-that new cluster have enough capacity to store all indices in the snapshot. It's possible to change indices settings
-during restore to reduce the number of replicas, which can help with restoring snapshots into smaller cluster. It's also
-possible to select only subset of the indices using the `indices` parameter.
+如果新集群的大小较小，则应多加考虑。首先要确保这个新集群有足够的容量来存储快照中的所有索引。在还原过程中可以更改索引设置减少副本的数量，这有助于将快照还原到较小的集群中。也能使用 `indices` 参数选择索引的子集。
 
-If indices in the original cluster were assigned to particular nodes using
-<<shard-allocation-filtering,shard allocation filtering>>, the same rules will be enforced in the new cluster. Therefore
-if the new cluster doesn't contain nodes with appropriate attributes that a restored index can be allocated on, such
-index will not be successfully restored unless these index allocation settings are changed during restore operation.
+如果原始集群中的索引使用<<shard-allocation-filtering,分片分配过滤>>指定了特定的节点，相同的规则将在新集群中强制执行。因此如果新集群不包含具有可在其上分配还原索引的适当属性的节点，除非在还原操作期间更改了这些索引分配设置，否则将无法成功还原这些索引。
 
-The restore operation also checks that restored persistent settings are compatible with the current cluster to avoid accidentally
-restoring an incompatible settings such as `discovery.zen.minimum_master_nodes` and as a result disable a smaller cluster until the
-required number of master eligible nodes is added. If you need to restore a snapshot with incompatible persistent settings, try
-restoring it without the global cluster state.
+还原操作还检查还原的持久设置是否与当前集群兼容，以避免意外地还原不兼容的设置，如 `discovery.zen.minimum_master_nodes` 还原到小集群中而导致集群瘫痪，直到添加所需的候选主节点数为止。如果需要还原包含不兼容的持久设置的快照，请尝试不包含全局群集状态来还原它。
 
 [float]
-=== Snapshot status
+=== 快照状态
 
-A list of currently running snapshots with their detailed status information can be obtained using the following command:
+可以使用以下命令获取当前正在运行的快照及其详细状态信息的列表：
 
 [source,sh]
 -----------------------------------
@@ -613,8 +476,7 @@ GET /_snapshot/_status
 // CONSOLE
 // TEST[continued]
 
-In this format, the command will return information about all currently running snapshots. By specifying a repository name, it's possible
-to limit the results to a particular repository:
+在这种格式下，命令将返回有关当前运行的所有快照的信息。通过指定储藏库名称，可以将结果限制到特定的储藏库：
 
 [source,sh]
 -----------------------------------
@@ -623,8 +485,7 @@ GET /_snapshot/my_backup/_status
 // CONSOLE
 // TEST[continued]
 
-If both repository name and snapshot id are specified, this command will return detailed status information for the given snapshot even
-if it's not currently running:
+如果同时指定了储藏库名称和快照ID，则此命令将返回给定快照的详细状态信息，即使它当前没有运行：
 
 [source,sh]
 -----------------------------------
@@ -633,7 +494,7 @@ GET /_snapshot/my_backup/snapshot_1/_status
 // CONSOLE
 // TEST[continued]
 
-The output looks similar to the following:
+输出类似于以下内容：
 
 [source,js]
 --------------------------------------------------
@@ -680,16 +541,11 @@ The output looks similar to the following:
 --------------------------------------------------
 // TESTRESPONSE
 
-The output is composed of different sections. The `stats` sub-object provides details on the number and size of files that were
-snapshotted. As snapshots are incremental, copying only the Lucene segments that are not already in the repository,
-the `stats` object contains a `total` section for all the files that are referenced by the snapshot, as well as an `incremental` section
-for those files that actually needed to be copied over as part of the incremental snapshotting. In case of a snapshot that's still
-in progress, there's also a `processed` section that contains information about the files that are in the process of being copied.
+输出由不同的部分组成。`stats` 子对象提供了有关快照的文件的数量和大小的详情。由于快照是增量的，只复制储藏库中不存在的 Lucene 段，`stats` 对象包含快照引用的所有文件的 `total` 部分，以及那些实际上需要作为增量快照的一部分而复制的文件的 `incremental` 部分。。若快照仍然在进行中，还有一个 `processed` 部分，其中包含正在复制的文件的信息。
 
-_Note_: Properties `number_of_files`, `processed_files`, `total_size_in_bytes` and `processed_size_in_bytes` are used for
-backward compatibility reasons with older 5.x and 6.x versions. These fields will be removed in Elasticsearch v7.0.0.
+_Note_: `number_of_files`、`processed_files`、`total_size_in_bytes` 和 `processed_size_in_bytes` 属性用于旧版本5.x和6.x的向后兼容性。这些字段将在 Elasticsearch v7.0.0中删除。
 
-Multiple ids are also supported:
+还支持多个id：
 
 [source,sh]
 -----------------------------------
@@ -699,13 +555,11 @@ GET /_snapshot/my_backup/snapshot_1,snapshot_2/_status
 // TEST[continued]
 
 [float]
-=== Monitoring snapshot/restore progress
+=== 监控快照/还原进度
 
-There are several ways to monitor the progress of the snapshot and restores processes while they are running. Both
-operations support `wait_for_completion` parameter that would block client until the operation is completed. This is
-the simplest method that can be used to get notified about operation completion.
+在它们运行时有几种方法可以监控快照和还原的进度。两个操作都支持 `wait_for_completion` 参数，该参数将阻塞客户端，直到操作完成。这是可用于获得有关操作完成的通知的最简单的方法。
 
-The snapshot operation can be also monitored by periodic calls to the snapshot info:
+还可以通过定期调用快照信息来监视快照操作：
 
 [source,sh]
 -----------------------------------
@@ -714,11 +568,9 @@ GET /_snapshot/my_backup/snapshot_1
 // CONSOLE
 // TEST[continued]
 
-Please note that snapshot info operation uses the same resources and thread pool as the snapshot operation. So,
-executing a snapshot info operation while large shards are being snapshotted can cause the snapshot info operation to wait
-for available resources before returning the result. On very large shards the wait time can be significant.
+请注意，快照信息操作使用的资源和线程池与快照操作相同。所以，在快照大分片时执行快照信息操作可能导致快照信息操作在返回结果之前等待可用资源。对于非常大的分片，等待时间可能很长。
 
-To get more immediate and complete information about snapshots the snapshot status command can be used instead:
+要更快地获得关于快照更完整的信息，可以使用快照状态命令：
 
 [source,sh]
 -----------------------------------
@@ -727,28 +579,17 @@ GET /_snapshot/my_backup/snapshot_1/_status
 // CONSOLE
 // TEST[continued]
 
-While snapshot info method returns only basic information about the snapshot in progress, the snapshot status returns
-complete breakdown of the current state for each shard participating in the snapshot.
+快照信息方法只返回正在进行的快照的基本信息，而快照状态将返回每个参与快照的分片的当前状态的完全细分。
 
-The restore process piggybacks on the standard recovery mechanism of the Elasticsearch. As a result, standard recovery
-monitoring services can be used to monitor the state of restore. When restore operation is executed the cluster
-typically goes into `red` state. It happens because the restore operation starts with "recovering" primary shards of the
-restored indices. During this operation the primary shards become unavailable which manifests itself in the `red` cluster
-state. Once recovery of primary shards is completed Elasticsearch is switching to standard replication process that
-creates the required number of replicas at this moment cluster switches to the `yellow` state. Once all required replicas
-are created, the cluster switches to the `green` states.
+还原过程依附于 Elasticsearch 的标准恢复机制。因此，标准恢复监控服务可用于监控还原状态。执行还原操作时，群集通常会进入 `red` 状态。发生这种情况是因为还原操作从“恢复”被还原索引的主分片开始。在此操作过程中，主分片将不可用，使集群处于 `red` 状态。一旦主分片恢复完成，Elasticsearch 将切换到标准的副本过程，此时创建所需数量的副本同时集群切换到 `yellow` 状态。一旦所有必需的副本创建后，集群将切换到 `green` 状态。
 
-The cluster health operation provides only a high level status of the restore process. It's possible to get more
-detailed insight into the current state of the recovery process by using <<indices-recovery, indices recovery>> and
-<<cat-recovery, cat recovery>> APIs.
+集群健康操作仅提供还原进程的高级状态。通过使用<<indices-recovery,索引恢复>>和<<cat-recovery,查看恢复>> API，可以洞察到更多恢复过程的当前状态的详细信息。
 
 [float]
-=== Stopping currently running snapshot and restore operations
+=== 停止当前正在运行的快照和还原操作
 
-The snapshot and restore framework allows running only one snapshot or one restore operation at a time. If a currently
-running snapshot was executed by mistake, or takes unusually long, it can be terminated using the snapshot delete operation.
-The snapshot delete operation checks if the deleted snapshot is currently running and if it does, the delete operation stops
-that snapshot before deleting the snapshot data from the repository.
+快照和还原框架一次只允许运行一个快照或还原操作。如果当前运行的快照是错误执行的，或者花费了异常长的时间，可以使用快照删除操作终止快照。
+快照删除操作检查删除的快照当前是否正在运行，如果正在运行，则删除操作删除储藏库中的快照数据之前会先停止快照。
 
 [source,sh]
 -----------------------------------
@@ -757,15 +598,8 @@ DELETE /_snapshot/my_backup/snapshot_1
 // CONSOLE
 // TEST[continued]
 
-The restore operation uses the standard shard recovery mechanism. Therefore, any currently running restore operation can
-be canceled by deleting indices that are being restored. Please note that data for all deleted indices will be removed
-from the cluster as a result of this operation.
+还原操作使用标准的分片恢复机制。因此，当前运行的任何还原操作都可以通过删除正在还原的索引来取消。请注意，此操作的结果是清除集群中所有被删除索引的数据。
 
 [float]
-=== Effect of cluster blocks on snapshot and restore operations
-Many snapshot and restore operations are affected by cluster and index blocks. For example, registering and unregistering
-repositories require write global metadata access. The snapshot operation requires that all indices and their metadata as
-well as the global metadata were readable. The restore operation requires the global metadata to be writable, however
-the index level blocks are ignored during restore because indices are essentially recreated during restore.
-Please note that a repository content is not part of the cluster and therefore cluster blocks don't affect internal
-repository operations such as listing or deleting snapshots from an already registered repository.
+=== 集群阻塞对快照和还原操作的影响
+许多快照和还原操作都受集群和索引阻塞的影响。例如，注册和注销储藏库需要全局元数据的写权限。快照操作要求所有索引及其元数据以及全局元数据是可读的。还原操作要求全局元数据可写，然而在还原期间会忽略索引级阻塞，因为在还原期间基本上重新创建了索引。请注意，储藏库内容不是集群的一部分，因此集群阻塞不会影响内部储藏库操作，如从已注册的储藏库中列出或删除快照。
