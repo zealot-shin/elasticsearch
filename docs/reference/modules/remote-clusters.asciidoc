@@ -1,47 +1,26 @@
 [[modules-remote-clusters]]
-== Remote clusters
+== 远程集群
 
 ifndef::include-xpack[]
-The _remote clusters_ module allows establishing uni-directional connections to
-a remote cluster. This functionality is used in
-<<modules-cross-cluster-search,cross-cluster search>>.
+_远程集群_ 模块允许建立到远程集群的单向连接。此功能用于<<modules-cross-cluster-search,跨集群搜索>>。
 endif::[]
 ifdef::include-xpack[]
-The _remote clusters_ module allows establishing uni-directional connections to
-a remote cluster. This functionality is used in cross-cluster replication, and
-<<modules-cross-cluster-search,cross-cluster search>>.
+_远程集群_ 模块允许建立到远程集群的单向连接。此功能用于跨集群副本和<<modules-cross-cluster-search,跨集群搜索>>。
 endif::[]
 
-Remote cluster connections work by configuring a remote cluster and connecting
-only to a limited number of nodes in the remote cluster. Each remote cluster is
-referenced by a name and a list of seed nodes.  When a remote cluster is
-registered, its cluster state is retrieved from one of the seed nodes so that by
-default up to three _gateway nodes_ are selected to be connected to as part of
-remote cluster requests.  Remote cluster connections consist of uni-directional
-connections from the coordinating node to the previously selected remote nodes
-only. It is possible to tag which nodes should be selected through node
-attributes (see <<remote-cluster-settings>>).
+远程集群连接通过配置远程集群来工作并只连接远程集群中有限数量的节点。每个远程集群使用名称和其种子节点列表来引用。注册远程集群后，从其中一个种子节点检索其集群状态，所以默认情况下，最多选择三个 _网关节点_ 去连接，作为远程集群请求的一部分。远程集群连接仅由从协调节点到之前选定的远程节点的单向连接组成。可以通过给节点属性打标签来决定选择哪个节点（请参见<<remote cluster settings,远程集群设置>>）。
 
-Each node in a cluster that has remote clusters configured connects to one or
-more _gateway nodes_ and uses them to federate requests to the remote cluster.
+配置了远程集群的集群中的每个节点都连接到一个或更多的 _网关节点_，并使用它们将请求联合到远程集群。
 
 [float]
 [[configuring-remote-clusters]]
-=== Configuring Remote Clusters
+=== 配置远程集群
 
-Remote clusters can be specified globally using
-<<cluster-update-settings,cluster settings>> (which can be updated dynamically),
-or local to individual nodes using the `elasticsearch.yml` file.
+可以使用全局<<cluster update settings,集群设定>>（可以动态更新），或相对各节点的本地 `elasticsearch.yml` 文件来指定远程集群。
 
-If a remote cluster is configured via `elasticsearch.yml` only the nodes with
-that configuration will be able to connect to the remote cluster. In other
-words, functionality that relies on remote cluster requests will have to be
-driven specifically from those nodes. Remote clusters set via the
-<<cluster-update-settings,cluster settings API>> will be available on every node
-in the cluster.
+如果远程集群是通过 `elasticsearch.yml` 配置的，则只有使用该配置的节点能够连接到远程集群。也就是说，依赖远程集群请求的功能必须专门从这些节点驱动。通过<<cluster update settings,集群设定 API>>配置的远程集群，在集群的每个节点上都能访问。
 
-The `elasticsearch.yml` config file for a node that connects to remote clusters
-needs to list the remote clusters that should be connected to, for instance:
+连接到远程集群的节点的 `elasticsearch.yml` 配置文件需要列出应连接到的远程集群，例如：
 
 [source,yaml]
 --------------------------------
@@ -53,13 +32,9 @@ cluster:
             seeds: 127.0.0.1:9301
 
 --------------------------------
-<1> `cluster_one` and `cluster_two` are arbitrary _cluster aliases_ representing
-the connection to each cluster. These names are subsequently used to distinguish
-between local and remote indices.
+<1> `cluster_one` 和 `cluster_two` 是任意的 _集群别名_ 表示到每个集群的连接。这些名字随后被用于区分本地和远程索引。
 
-The equivalent example using the <<cluster-update-settings,cluster settings
-API>> to add remote clusters to all nodes in the cluster would look like the
-following:
+同样的例子使用<<cluster-update-settings,集群设定 API>> 来为集群中所有节点添加远程集群如下所示：
 
 [source,js]
 --------------------------------
@@ -92,8 +67,7 @@ PUT _cluster/settings
 // TEST[setup:host]
 // TEST[s/127.0.0.1:9300/\${transport_host}/]
 
-A remote cluster can be deleted from the cluster settings by setting its seeds
-to `null`:
+从集群设置中删除一个远程集群，只需把它的种子设置为 `null`:
 
 [source,js]
 --------------------------------
@@ -112,50 +86,34 @@ PUT _cluster/settings
 --------------------------------
 // CONSOLE
 // TEST[continued]
-<1> `cluster_three` would be removed from the cluster settings, leaving
-`cluster_one` and `cluster_two` intact.
+<1> `cluster_three` 会从集群设定中移除，保留 `cluster_one` 和 `cluster_two` 不变。
 
 [float]
 [[remote-cluster-settings]]
-=== Remote cluster settings
+=== 远程集群设定
 
 `cluster.remote.connections_per_cluster`::
 
-  The number of gateway nodes to connect to per remote cluster. The default is
-  `3`.
+  每个远程集群要连接到的网关节点数。默认为 `3`。
 
 `cluster.remote.initial_connect_timeout`::
 
-  The time to wait for remote connections to be established when the node
-  starts. The default is `30s`.
+  节点启动时等待建立远程连接的时间。默认值为 `30s`。
 
 `cluster.remote.node.attr`::
 
-  A node attribute to filter out nodes that are eligible as a gateway node in
-  the remote cluster. For instance a node can have a node attribute
-  `node.attr.gateway: true` such that only nodes with this attribute will be
-  connected to if `cluster.remote.node.attr` is set to `gateway`.
+  在远程集群中筛选出符合网关节点条件的节点的节点属性。例如，一个节点可以有一个节点属性 `node.attr.gateway: true`，这样，只有具有此属性的节点才会被连接到，如果 `cluster.remote.node.attr` 设置为 `gateway` 的话。
 
 `cluster.remote.connect`::
 
-  By default, any node in the cluster can act as a cross-cluster client and
-  connect to remote clusters. The `cluster.remote.connect` setting can be set to
-  `false` (defaults to `true`) to prevent certain nodes from connecting to
-  remote clusters. Remote cluster requests must be sent to a node that is
-  allowed to act as a cross-cluster client.
+  默认情况下，集群中的任何节点都可以充当跨集群客户端，并且连接到远程集群。`cluster.remote.connect` 设置可以设置为 `false`（默认为 `true`），以防止某些节点连接到远程集群。远程集群请求必须发送到允许充当跨集群客户端的节点。
 
 `cluster.remote.${cluster_alias}.skip_unavailable`::
 
-  Per cluster boolean setting that allows to skip specific clusters when no
-  nodes belonging to them are available and they are the targetof a remote
-  cluster request. Default is `false`, meaning that all clusters are mandatory
-  by default, but they can selectively be made optional by setting this setting
-  to `true`.
+  每个集群的布尔设置，允许在下述情况跳过特定集群，即没有一个属于它们的节点可用，并且它们是一个远程集群请求的目标时。默认值为 `false`，表示所有集群都是强制的，但可以通过把此设置设为 `true` 来选择性地将其变为可选项。
 
 [float]
 [[retrieve-remote-clusters-info]]
-=== Retrieving remote clusters info
+=== 检索远程集群信息
 
-The <<cluster-remote-info, Remote Cluster Info API>> allows to retrieve
-information about the configured remote clusters, as well as the remote nodes
-that the node is connected to.
+<<cluster-remote-info, 远程集群信息 API>> 允许检索有关配置的远程集群，以及节点连接到的远程节点的信息。
