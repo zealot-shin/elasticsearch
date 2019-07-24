@@ -1,69 +1,51 @@
 [[modules-memcached]]
 == memcached
 
-The memcached module allows to expose *Elasticsearch*
-APIs over the memcached protocol (as closely
-as possible).
+memcached 模块允许（尽可能接近地）通过 memcached 协议暴露 *Elasticsearch* API。
 
-It is provided as a plugin called `transport-memcached` and installing
-is explained
-https://github.com/elastic/elasticsearch-transport-memcached[here]
-. Another option is to download the memcached plugin and placing it
-under the `plugins` directory.
+它通过称作 `transport-memcached` 的插件提供，安装教程在 https://github.com/elastic/elasticsearch-transport-memcached[这里]。另一个选择是下载 memcached 插件然后将它放到 `plugins` 目录下。
 
-The memcached protocol supports both the binary and the text protocol,
-automatically detecting the correct one to use.
+memcached 协议同时支持二进制和文本协议，自动检测正确的那个来使用。
 
 [float]
-=== Mapping REST to Memcached Protocol
+=== 映射 REST 到 Memcached 协议
 
-Memcached commands are mapped to REST and handled by the same generic
-REST layer in Elasticsearch. Here is a list of the memcached commands
-supported:
+Elasticsearch 中 Memcached 命令被映射到 REST 并且由一样的一般 REST 层来处理。这里是一个支持的 memcached 命令的列表：
 
 [float]
 ==== GET
 
-The memcached `GET` command maps to a REST `GET`. The key used is the
-URI (with parameters). The main downside is the fact that the memcached
-`GET` does not allow body in the request (and `SET` does not allow to
-return a result...). For this reason, most REST APIs (like search) allow
-to accept the "source" as a URI parameter as well.
+memcached `GET` 命令映射到一个 REST `GET`. 使用的键是 URI（含参数）。主要缺点是 memcached `GET` 不允许在请求中包含请求体（且 `SET` 不允许返回结果...）。因为这个原因，多数 REST API（如查询）也允许接收 "source" 作为 URI 参数。
 
 [float]
 ==== SET
 
-The memcached `SET` command maps to a REST `POST`. The key used is the
-URI (with parameters), and the body maps to the REST body.
+memcached `SET` 命令映射到一个 REST `POST`。使用的键是 URI（含参数），请求体映射到 REST 请求体。
 
 [float]
 ==== DELETE
 
-The memcached `DELETE` command maps to a REST `DELETE`. The key used is
-the URI (with parameters).
+memcached `DELETE` 命令映射到一个 REST `DELETE`。使用的键是 URI（含参数）。
 
 [float]
 ==== QUIT
 
-The memcached `QUIT` command is supported and disconnects the client.
+支持 memcached `QUIT` 命令，来断开客户端连接。
 
 [float]
-=== Settings
+=== 设置
 
-The following are the settings the can be configured for memcached:
+以下是可对 memcached 进行配置的设置：
 
 [cols="<,<",options="header",]
 |===============================================================
 |Setting |Description
-|`memcached.port` |A bind port range. Defaults to `11211-11311`.
+|`memcached.port` |一个绑定的端口范围。默认为 `11211-11311`。
 |===============================================================
 
-It also uses the common
-<<modules-network,network settings>>.
+它也使用共通的<<modules-network,网络设定>>。
 
 [float]
-=== Disable memcached
+=== 禁用 memcached
 
-The memcached module can be completely disabled and not started using by
-setting `memcached.enabled` to `false`. By default it is enabled once it
-is detected as a plugin.
+要完全禁用 memcached 模块并且不被启动，可将 `memcached.enabled` 设定为 `false`。默认会被启用，只要在插件中检测到它。
