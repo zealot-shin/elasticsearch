@@ -1,28 +1,20 @@
 [float]
 [[modules-node-xpack]]
-== [xpack]#X-Pack node settings#
+== [xpack]#X-Pack 节点设置#
 
 //This content is referenced from the elastic/elasticsearch/docs/reference/modules/node.asciidoc
 
-If {xpack} is installed, there is an additional node type:
+如果安装了 {xpack}，那么有一个额外的节点类型：
 
-<<ml-node,Machine learning node>>::
+<<ml-node,机器学习节点>>::
 
-A node that has `xpack.ml.enabled` and `node.ml` set to `true`, which is the
-default behavior when {xpack} is installed. If you want to use {xpackml}
-features, there must be at least one {ml} node in your cluster. For more
-information about {xpackml} features,
-see {xpack-ref}/xpack-ml.html[Machine Learning in the Elastic Stack].
+将 `xpack.ml.enabled` 和 `node.ml` 设置为 `true` 的节点，安装 {xpack} 时的默认行为。如果您想使用 {xpackml} 功能，集群中必须至少有一个 {ml} 节点。更多有关 {xpackml} 功能的信息，参见 {xpack-ref}/xpack-ml.html[Machine Learning in the Elastic Stack]。
 
-IMPORTANT: Do not set use the `node.ml` setting unless {xpack} is installed.
-Otherwise, the node fails to start.
+IMPORTANT: 除非安装了 {xpack}，否则不要设置使用 `node.ml` 设置。否则，节点无法启动。
 
-If {xpack} is installed, nodes are master-eligible, data, ingest, and {ml}
-nodes by default. As the cluster grows and in particular if you have large
-{ml} jobs, consider separating dedicated master-eligible nodes from dedicated
-data nodes and dedicated {ml} nodes.
+如果安装了xpack，则节点默认是候选主节点、数据节点、摄取节点和 {ml} 节点。随着集群的增长，尤其是有大量 {ml} 作业时，考虑将专用候选主节点与专用数据节点和专用 {ml} 节点分开。
 
-To create a dedicated master-eligible node when {xpack} is installed, set:
+要在安装 {xpack} 时创建专用候选主节点，请设置：
 
 [source,yaml]
 -------------------
@@ -32,13 +24,13 @@ node.ingest: false <3>
 node.ml: false <4>
 xpack.ml.enabled: true <5>
 -------------------
-<1> The `node.master` role is enabled by default.
-<2> Disable the `node.data` role (enabled by default).
-<3> Disable the `node.ingest` role (enabled by default).
-<4> Disable the `node.ml` role (enabled by default in {xpack}).
-<5> The `xpack.ml.enabled` setting is enabled by default in {xpack}.
+<1> 默认启用 `node.master` 角色。
+<2> 禁用 `node.data` 角色（默认启用）。
+<3> 禁用 `node.ingest` 角色（默认启用）。
+<4> 禁用 `node.ml` 角色（在 {xpack} 中默认启用）。
+<5> 在 {xpack} 中默认启用 `xpack.ml.enabled` 设置。
 
-To create a dedicated data node when {xpack} is installed, set:
+要在安装 {xpack} 时创建专用数据节点，请设置：
 
 [source,yaml]
 -------------------
@@ -47,12 +39,12 @@ node.data: true <2>
 node.ingest: false <3>
 node.ml: false <4>
 -------------------
-<1> Disable the `node.master` role (enabled by default).
-<2> The `node.data` role is enabled by default.
-<3> Disable the `node.ingest` role (enabled by default).
-<4> Disable the `node.ml` role (enabled by default in {xpack}).
+<1> 禁用 `node.master` 角色（默认启用）。
+<2> 默认启用 `node.data`  角色。
+<3> 禁用 `node.ingest` 角色（默认启用）。
+<4> 禁用 `node.ml` 角色（在 {xpack} 中默认启用）。
 
-To create a dedicated ingest node when {xpack} is installed, set:
+要在安装 {xpack} 时创建专用摄入节点，请设置：
 
 [source,yaml]
 -------------------
@@ -62,13 +54,13 @@ node.ingest: true <3>
 cluster.remote.connect: false <4>
 node.ml: false <5>
 -------------------
-<1> Disable the `node.master` role (enabled by default).
-<2> Disable the `node.data` role (enabled by default).
-<3> The `node.ingest` role is enabled by default.
-<4> Disable cross-cluster search (enabled by default).
-<5> Disable the `node.ml` role (enabled by default in {xpack}).
+<1> 禁用 `node.master` 角色（默认启用）。
+<2> 禁用 `node.data` 角色（默认启用）。
+<3> 默认启用 `node.ingest` 角色。
+<4> 禁用跨集群搜索（默认启用）。
+<5> 禁用 `node.ml` 角色（在 {xpack} 中默认启用）。
 
-To create a dedicated coordinating node when {xpack} is installed, set:
+要在安装 {xpack} 时创建专用协调节点，请设置：
 
 [source,yaml]
 -------------------
@@ -78,27 +70,23 @@ node.ingest: false <3>
 cluster.remote.connect: false <4>
 node.ml: false <5>
 -------------------
-<1> Disable the `node.master` role (enabled by default).
-<2> Disable the `node.data` role (enabled by default).
-<3> Disable the `node.ingest` role (enabled by default).
-<4> Disable cross-cluster search (enabled by default).
-<5> Disable the `node.ml` role (enabled by default in {xpack}).
+<1> 禁用 `node.master` 角色（默认启用）。
+<2> 禁用 `node.data` 角色（默认启用）。
+<3> 禁用 `node.ingest` 角色（默认启用）。
+<4> 禁用跨集群搜索（默认启用）。
+<5> 禁用 `node.ml` 角色（在 {xpack} 中默认启用）。
 
 [float]
 [[ml-node]]
-=== [xpack]#Machine learning node#
+=== [xpack]#机器学习节点#
 
-The {xpackml} features provide {ml} nodes, which run jobs and handle {ml} API
-requests. If `xpack.ml.enabled` is set to true and `node.ml` is set to `false`,
-the node can service API requests but it cannot run jobs.
+{xpackml} 功能提供了 {ml} 节点，用来运行任务和处理 {ml} API 请求。 如果 `xpack.ml.enabled` 设置为 true 并且 `node.ml` 设置为 `false`，那么该节点可服务于 API 请求但不能运行任务。
 
-If you want to use {xpackml} features in your cluster, you must enable {ml}
-(set `xpack.ml.enabled` to `true`) on all master-eligible nodes. Do not use
-these settings if you do not have {xpack} installed.
+如果想在集群中使用 {xpackml} 功能，必须在全部候选主节点上启用 {ml}。如果没有安装 {xpack}，不要使用这些设置。
 
-For more information about these settings, see <<ml-settings>>.
+更多关于这些设置的信息，请看 <<ml-settings, 机器学习设置>>。
 
-To create a dedicated {ml} node, set:
+要创建一个专用 {ml} 节点，请设置：
 
 [source,yaml]
 -------------------
@@ -109,9 +97,9 @@ cluster.remote.connect: false <4>
 node.ml: true <5>
 xpack.ml.enabled: true <6>
 -------------------
-<1> Disable the `node.master` role (enabled by default).
-<2> Disable the `node.data` role (enabled by default).
-<3> Disable the `node.ingest` role (enabled by default).
-<4> Disable cross-cluster search (enabled by default).
-<5> The `node.ml` role is enabled by default in {xpack}.
-<6> The `xpack.ml.enabled` setting is enabled by default in {xpack}.
+<1> 禁用 `node.master` 角色（默认启用）。
+<2> 禁用 `node.data` 角色（默认启用）。
+<3> 禁用 `node.ingest` 角色（默认启用）。
+<4> 禁用跨集群搜索（默认启用）。
+<5> {xpack} 中默认启用 `node.ml` 角色。
+<6> {xpack} 中默认启用 `xpack.ml.enabled` 设置。
