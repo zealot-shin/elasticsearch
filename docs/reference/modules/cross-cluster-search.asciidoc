@@ -1,15 +1,12 @@
 [[modules-cross-cluster-search]]
-== Cross Cluster Search
+== 跨集群搜索
 
-The _cross cluster search_ feature allows any node to act as a federated client across
-multiple clusters. In contrast to the <<modules-tribe,tribe node>> feature, a  cross cluster search node won't
-join the remote cluster, instead it connects to a remote cluster in a light fashion in order to execute
-federated search requests.
+_跨集群搜索_ 功能允许任何节点作为一个跨多个集群的联合客户端。与<<modules-tribe,部落节点>>不同，一个跨集群搜索节点不会加入远程集群，相反，它用一个更轻量的方式连接到远程集群来执行联合搜索请求。
 
 [float]
-=== Using cross cluster search
+=== 使用跨集群搜索
 
-Cross-cluster search requires <<modules-remote-clusters,configuring remote clusters>>.
+跨集群搜索要求<<modules-remote-clusters,配置远程集群>>。
 
 [source,js]
 --------------------------------
@@ -42,8 +39,7 @@ PUT _cluster/settings
 // TEST[setup:host]
 // TEST[s/127.0.0.1:9300/\${transport_host}/]
 
-To search the `twitter` index on remote cluster `cluster_one` the index name
-must be prefixed with the cluster alias separated by a `:` character:
+要搜索远程集群 `cluster_one` 上的 `twitter` 索引，索引名称必须加上以 `:` 字符分隔的集群别名前缀：
 
 [source,js]
 --------------------------------------------------
@@ -101,8 +97,7 @@ GET /cluster_one:twitter/_search
 // TESTRESPONSE[s/"_score": 1/"_score": "$body.hits.hits.0._score"/]
 
 
-In contrast to the `tribe` feature cross cluster search can also search indices with the same name on different
-clusters:
+与 `tribe` 功能不同的是跨集群搜索同样可以搜索不同集群上的相同名称的索引：
 
 [source,js]
 --------------------------------------------------
@@ -118,10 +113,7 @@ GET /cluster_one:twitter,twitter/_search
 // CONSOLE
 // TEST[continued]
 
-Search results are disambiguated the same way as the indices are disambiguated in the request. Even if index names are
-identical these indices will be treated as different indices when results are merged. All results retrieved from a
-remote index
-will be prefixed with their remote cluster name:
+搜索结果和请求中的索引是同样的模糊方式。尽管索引名称是一致的，这些索引在结果合并时仍会被当成不同的索引来对待。所有从远程集群检索到的结果会在其前面追加集群名称：
 
 [source,js]
 --------------------------------------------------
@@ -177,12 +169,9 @@ will be prefixed with their remote cluster name:
 // TESTRESPONSE[s/"_score": 2/"_score": "$body.hits.hits.1._score"/]
 
 [float]
-=== Skipping disconnected clusters
+=== 跳过断开的集群
 
-By default all remote clusters that are searched via Cross Cluster Search need to be available when
-the search request is executed, otherwise the whole request fails and no search results are returned
-despite some of the clusters are available. Remote clusters can be made optional through the
-boolean `skip_unavailable` setting, set to `false` by default.
+默认在执行搜索请求时，通过跨集群搜索来搜索的所有的远程集群都必须可以访问，否则整个请求会失败，并且不会返回任何结果，尽管有一些集群可用。远程集群可通过 `skip_unavailable` 布尔设置变为可选的，默认值是 `false`。
 
 [source,js]
 --------------------------------
@@ -195,7 +184,7 @@ PUT _cluster/settings
 --------------------------------
 // CONSOLE
 // TEST[continued]
-<1> `cluster_two` is made optional
+<1> `cluster_two` 是可选的
 
 [source,js]
 --------------------------------------------------
@@ -210,7 +199,7 @@ GET /cluster_one:twitter,cluster_two:twitter,twitter/_search <1>
 --------------------------------------------------
 // CONSOLE
 // TEST[continued]
-<1> Search against the `twitter` index in `cluster_one`, `cluster_two` and also locally
+<1> 针对 `cluster_one` 和 `cluster_two` 以及本地的 `twitter` 索引的搜索。
 
 [source,js]
 --------------------------------------------------
@@ -264,4 +253,4 @@ GET /cluster_one:twitter,cluster_two:twitter,twitter/_search <1>
 // TESTRESPONSE[s/"max_score": 1/"max_score": "$body.hits.max_score"/]
 // TESTRESPONSE[s/"_score": 1/"_score": "$body.hits.hits.0._score"/]
 // TESTRESPONSE[s/"_score": 2/"_score": "$body.hits.hits.1._score"/]
-<1> The `clusters` section indicates that one cluster was unavailable and got skipped
+<1> `clusters` 部分指示有一个集群不可用并且被跳过。
